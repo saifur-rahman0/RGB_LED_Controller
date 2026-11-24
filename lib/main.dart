@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'services/audio_reactive_service.dart';
 import 'services/ble_led_service.dart';
+import 'services/local_api_service.dart';
+import 'services/obs_service.dart';
+import 'services/screen_sync_service.dart';
 import 'ui/console_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Desktop Window Configuration
+  // Desktop Window Manager Configuration
   await windowManager.ensureInitialized();
 
   const windowOptions = WindowOptions(
-    size: Size(940, 720),
-    minimumSize: Size(540, 680),
+    size: Size(980, 740),
+    minimumSize: Size(620, 680),
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.normal,
+    titleBarStyle: TitleBarStyle.hidden, // Frameless custom Windows titlebar
     title: 'RGBZap LED Console • ELK-BLEDOM BLE Controller',
   );
 
@@ -29,13 +33,54 @@ void main() async {
   runApp(const RgbZapApp());
 }
 
-class RgbZapApp extends StatelessWidget {
+class RgbZapApp extends StatefulWidget {
   const RgbZapApp({super.key});
 
   @override
+  State<RgbZapApp> createState() => _RgbZapAppState();
+}
+
+class _RgbZapAppState extends State<RgbZapApp> {
+  late final BleLedService _bleService;
+  late final ScreenSyncService _screenSyncService;
+  late final AudioReactiveService _audioReactiveService;
+  late final LocalApiService _localApiService;
+  late final ObsService _obsService;
+
+  @override
+  void initState() {
+    super.initState();
+    _bleService = BleLedService();
+    _screenSyncService = ScreenSyncService(bleService: _bleService);
+    _audioReactiveService = AudioReactiveService(bleService: _bleService);
+    _localApiService = LocalApiService(
+      bleService: _bleService,
+      screenSyncService: _screenSyncService,
+      audioReactiveService: _audioReactiveService,
+    );
+    _obsService = ObsService(bleService: _bleService);
+  }
+
+  @override
+  void dispose() {
+    _obsService.dispose();
+    _localApiService.dispose();
+    _audioReactiveService.dispose();
+    _screenSyncService.dispose();
+    _bleService.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<BleLedService>(
-      create: (_) => BleLedService(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<BleLedService>.value(value: _bleService),
+        ChangeNotifierProvider<ScreenSyncService>.value(value: _screenSyncService),
+        ChangeNotifierProvider<AudioReactiveService>.value(value: _audioReactiveService),
+        ChangeNotifierProvider<LocalApiService>.value(value: _localApiService),
+        ChangeNotifierProvider<ObsService>.value(value: _obsService),
+      ],
       child: MaterialApp(
         title: 'RGBZap LED Console',
         debugShowCheckedModeBanner: false,
@@ -53,6 +98,11 @@ class RgbZapApp extends StatelessWidget {
             onSurface: Color(0xFFFAFAFA),
           ),
           fontFamily: 'Segoe UI',
+          scrollbarTheme: ScrollbarThemeData(
+            thumbColor: WidgetStateProperty.all(const Color(0xFF3F3F46)),
+            radius: const Radius.circular(4),
+            thickness: WidgetStateProperty.all(6),
+          ),
           tooltipTheme: const TooltipThemeData(
             decoration: BoxDecoration(
               color: Color(0xFF27272A),
