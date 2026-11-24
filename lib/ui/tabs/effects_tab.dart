@@ -1,6 +1,8 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../protocol/elk_protocol.dart';
 import '../../services/ble_led_service.dart';
+import '../widgets/animated_effect_tile.dart';
 import '../widgets/glowing_card.dart';
 
 class EffectsTab extends StatefulWidget {
@@ -13,53 +15,45 @@ class EffectsTab extends StatefulWidget {
 }
 
 class _EffectsTabState extends State<EffectsTab> {
-  String _selectedCategory = 'All';
+  String _selectedSection = 'Ambient Drifts';
 
-  static const List<String> _categories = [
+  static const List<String> _sections = [
+    'Ambient Drifts',
+    'Flames & Pulses',
+    'Hardware Modes',
     'All',
-    'Crossfade',
-    'Fade',
-    'Strobe',
-    'Jump',
-    'Smooth',
-    'Flash',
   ];
 
   @override
   Widget build(BuildContext context) {
     final ble = widget.bleService;
-    final allModes = ElkEffectCatalog.modes;
-    final filteredModes = _selectedCategory == 'All'
-        ? allModes
-        : allModes.where((m) => m.category == _selectedCategory).toList();
-
-    final activeEffect = ElkEffectCatalog.getById(ble.currentEffectMode);
+    final activeScene = ble.activeScene;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. ACTIVE HARDWARE EFFECT BANNER
+          // 1. ACTIVE EFFECT CONTROLLER BANNER
           GlowingCard(
             glowColor: const Color(0xFF8B5CF6),
-            isGlowing: ble.isPoweredOn && ble.activeScene == ActiveScene.none,
-            padding: const EdgeInsets.all(18),
+            isGlowing: ble.isPoweredOn && (activeScene != ActiveScene.none || ble.currentEffectMode != 0),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.5)),
                   ),
                   child: const Center(
-                    child: Icon(Icons.blur_linear_rounded, color: Color(0xFFA78BFA), size: 28),
+                    child: Icon(Icons.auto_awesome_rounded, color: Color(0xFFA78BFA), size: 24),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,137 +61,145 @@ class _EffectsTabState extends State<EffectsTab> {
                       Row(
                         children: [
                           const Text(
-                            'CURRENT HARDWARE EFFECT',
+                            'LIGHTING ENGINE STATUS',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 1.0,
+                              letterSpacing: 0.8,
                               color: Color(0xFFA78BFA),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF27272A),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              activeEffect.hexId,
-                              style: const TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFC4B5FD),
+                          if (ble.reduceFlashing)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'FLASH LIMITER ACTIVE',
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                               ),
                             ),
-                          ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
-                        activeEffect.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        activeEffect.description,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFFA1A1AA)),
+                        activeScene != ActiveScene.none
+                            ? 'Playing: ${activeScene.name.toUpperCase()}'
+                            : 'Hardware: ${ElkEffectCatalog.getById(ble.currentEffectMode).name}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ],
                   ),
                 ),
+                if (activeScene != ActiveScene.none)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                      foregroundColor: const Color(0xFFF87171),
+                      side: const BorderSide(color: Color(0xFFEF4444)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.stop_rounded, size: 16),
+                    label: const Text('Stop', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    onPressed: () => ble.stopScene(),
+                  ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // 2. HARDWARE EFFECT SPEED SLIDER
+          // 2. SPEED SLIDER & REDUCE FLASHING SWITCH
           GlowingCard(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.speed_rounded, size: 18, color: Color(0xFF06B6D4)),
-                        SizedBox(width: 8),
-                        Text(
-                          'HARDWARE EFFECT SPEED (1..100)',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                            color: Color(0xFFA1A1AA),
+                // Speed Slider
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'EFFECT SPEED',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFA1A1AA)),
                           ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF27272A),
-                        borderRadius: BorderRadius.circular(12),
+                          Text(
+                            '${ble.currentEffectSpeed}%',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF06B6D4)),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        '${ble.currentEffectSpeed}%',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF06B6D4),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.directions_walk_rounded, size: 18, color: Color(0xFF71717A)),
-                    Expanded(
-                      child: SliderTheme(
+                      SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: const Color(0xFF06B6D4),
                           inactiveTrackColor: const Color(0xFF27272A),
                           thumbColor: const Color(0xFF06B6D4),
-                          overlayColor: const Color(0xFF06B6D4).withValues(alpha: 0.2),
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-                          trackHeight: 5,
+                          trackHeight: 4,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
                         ),
                         child: Slider(
                           value: ble.currentEffectSpeed.toDouble(),
                           min: 1,
                           max: 100,
-                          onChanged: (val) {
-                            ble.sendEffectSpeed(val.round());
-                          },
+                          onChanged: (v) => ble.sendEffectSpeed(v.round()),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 24),
+
+                // Reduce Flashing Switch
+                Container(
+                  height: 48,
+                  width: 1,
+                  color: const Color(0xFF27272A),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Reduce Flashing',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        const SizedBox(width: 4),
+                        Tooltip(
+                          message: 'Limits rapid light flashes and harsh strobes for visual comfort and accessibility.',
+                          child: Icon(Icons.info_outline_rounded, size: 14, color: Colors.white.withValues(alpha: 0.5)),
+                        ),
+                      ],
                     ),
-                    const Icon(Icons.bolt_rounded, size: 20, color: Color(0xFF06B6D4)),
+                    Switch(
+                      value: ble.reduceFlashing,
+                      activeThumbColor: const Color(0xFF10B981),
+                      onChanged: (v) => ble.setReduceFlashing(v),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // 3. CATEGORY FILTER CHIPS
+          // 3. SECTION SELECTOR TABS
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: _categories.map((category) {
-                final isSelected = _selectedCategory == category;
+              children: _sections.map((section) {
+                final isSelected = _selectedSection == section;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text(category),
+                    label: Text(section),
                     selected: isSelected,
                     selectedColor: const Color(0xFF8B5CF6),
                     backgroundColor: const Color(0xFF18181B),
@@ -209,12 +211,8 @@ class _EffectsTabState extends State<EffectsTab> {
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       fontSize: 12,
                     ),
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _selectedCategory = category;
-                        });
-                      }
+                    onSelected: (val) {
+                      if (val) setState(() => _selectedSection = section);
                     },
                   ),
                 );
@@ -223,119 +221,289 @@ class _EffectsTabState extends State<EffectsTab> {
           ),
           const SizedBox(height: 16),
 
-          // 4. EFFECTS GRID (29 BUILT-IN MODES 0x80 TO 0x9C)
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: filteredModes.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 2.6,
-            ),
-            itemBuilder: (context, index) {
-              final mode = filteredModes[index];
-              final isCurrent = ble.currentEffectMode == mode.id;
-
-              return GlowingCard(
-                glowColor: const Color(0xFF8B5CF6),
-                isGlowing: isCurrent,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                onTap: () => ble.sendHardwareEffect(mode.id),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isCurrent
-                            ? const Color(0xFF8B5CF6).withValues(alpha: 0.3)
-                            : const Color(0xFF27272A),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        _getCategoryIcon(mode.category),
-                        size: 20,
-                        color: isCurrent ? const Color(0xFFC4B5FD) : const Color(0xFFA1A1AA),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                mode.hexId,
-                                style: TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isCurrent ? const Color(0xFFA78BFA) : const Color(0xFF71717A),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF27272A),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                                child: Text(
-                                  mode.category,
-                                  style: const TextStyle(fontSize: 9, color: Color(0xFFA1A1AA)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            mode.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: isCurrent ? Colors.white : const Color(0xFFD4D4D8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isCurrent)
-                      const Icon(
-                        Icons.play_circle_fill_rounded,
-                        color: Color(0xFF8B5CF6),
-                        size: 20,
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
+          // 4. ANIMATED EFFECT TILES GRID
+          _buildEffectTilesGrid(ble),
         ],
       ),
     );
   }
 
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Crossfade':
-        return Icons.gradient_rounded;
-      case 'Fade':
-        return Icons.waves_rounded;
-      case 'Strobe':
-        return Icons.flash_on_rounded;
-      case 'Jump':
-        return Icons.sync_alt_rounded;
-      case 'Smooth':
-        return Icons.stream_rounded;
-      case 'Flash':
-        return Icons.flare_rounded;
-      default:
-        return Icons.tune_rounded;
+  Widget _buildEffectTilesGrid(BleLedService ble) {
+    final List<Widget> tiles = [];
+
+    // Ambient Drifts Section
+    if (_selectedSection == 'Ambient Drifts' || _selectedSection == 'All') {
+      tiles.addAll([
+        AnimatedEffectTile(
+          title: 'Aurora',
+          subtitle: 'Rolling northern lights green-teal-purple wave.',
+          badge: 'DRIFT',
+          icon: Icons.waves_rounded,
+          isActive: ble.activeScene == ActiveScene.aurora,
+          onTap: () => ble.startScene(ActiveScene.aurora),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFF00FF88), const Color(0xFF7C4DFF), (sin(p * 2 * pi) + 1) / 2)!,
+            Color.lerp(const Color(0xFF00D2FF), const Color(0xFF00FF88), (cos(p * 2 * pi) + 1) / 2)!,
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Lava Lamp',
+          subtitle: 'Warm rising liquid blobs of molten crimson and amber.',
+          badge: 'DRIFT',
+          icon: Icons.bubble_chart_rounded,
+          isActive: ble.activeScene == ActiveScene.lavaLamp,
+          onTap: () => ble.startScene(ActiveScene.lavaLamp),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFFFF2200), const Color(0xFFFF8800), (sin(p * 2 * pi) + 1) / 2)!,
+            const Color(0xFF990000),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Vaporwave',
+          subtitle: 'Electric neon magenta and glowing cyan synthwave.',
+          badge: 'DRIFT',
+          icon: Icons.nightlife_rounded,
+          isActive: ble.activeScene == ActiveScene.vaporwave,
+          onTap: () => ble.startScene(ActiveScene.vaporwave),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFFFF007F), const Color(0xFF00F0FF), (sin(p * 2 * pi) + 1) / 2)!,
+            const Color(0xFF7C4DFF),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Sunset',
+          subtitle: 'Deep dusky violet fading into warm orange and gold.',
+          badge: 'DRIFT',
+          icon: Icons.wb_twilight_rounded,
+          isActive: ble.activeScene == ActiveScene.sunset,
+          onTap: () => ble.startScene(ActiveScene.sunset),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFF4A0E4E), const Color(0xFFFF5722), (sin(p * 2 * pi) + 1) / 2)!,
+            const Color(0xFFFFC107),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Forest',
+          subtitle: 'Emerald, pine, and moss green gentle canopy drifts.',
+          badge: 'DRIFT',
+          icon: Icons.forest_rounded,
+          isActive: ble.activeScene == ActiveScene.forest,
+          onTap: () => ble.startScene(ActiveScene.forest),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFF1B5E20), const Color(0xFF00E676), (sin(p * 2 * pi) + 1) / 2)!,
+            const Color(0xFF2E7D32),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Galaxy',
+          subtitle: 'Deep interstellar nebula indigo, midnight blue, and purple.',
+          badge: 'DRIFT',
+          icon: Icons.stars_rounded,
+          isActive: ble.activeScene == ActiveScene.galaxy,
+          onTap: () => ble.startScene(ActiveScene.galaxy),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFF0D083B), const Color(0xFFE040FB), (sin(p * 2 * pi) + 1) / 2)!,
+            const Color(0xFF3F51B5),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Ice',
+          subtitle: 'Crisp crystalline glaciers, pure white, and cyan frost.',
+          badge: 'DRIFT',
+          icon: Icons.ac_unit_rounded,
+          isActive: ble.activeScene == ActiveScene.ice,
+          onTap: () => ble.startScene(ActiveScene.ice),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFFE0F7FA), const Color(0xFF00E5FF), (sin(p * 2 * pi) + 1) / 2)!,
+            Colors.white,
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Rainbow',
+          subtitle: 'Smooth continuous 360-degree chromatic spectrum sweep.',
+          badge: 'DRIFT',
+          icon: Icons.looks_rounded,
+          isActive: ble.activeScene == ActiveScene.rgbCycle,
+          onTap: () => ble.startScene(ActiveScene.rgbCycle),
+          colorGenerator: (p) => [
+            HSVColor.fromAHSV(1.0, (p * 360.0) % 360.0, 1.0, 1.0).toColor(),
+            HSVColor.fromAHSV(1.0, ((p + 0.3) * 360.0) % 360.0, 1.0, 1.0).toColor(),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Ocean',
+          subtitle: 'Deep oceanic navy to vivid aqua swell tides.',
+          badge: 'DRIFT',
+          icon: Icons.water_rounded,
+          isActive: ble.activeScene == ActiveScene.oceanBreathe,
+          onTap: () => ble.startScene(ActiveScene.oceanBreathe),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFF001F3F), const Color(0xFF00D2FF), (sin(p * 2 * pi) + 1) / 2)!,
+            const Color(0xFF0074D9),
+          ],
+        ),
+      ]);
     }
+
+    // Flames & Pulses Section
+    if (_selectedSection == 'Flames & Pulses' || _selectedSection == 'All') {
+      tiles.addAll([
+        AnimatedEffectTile(
+          title: 'Candle',
+          subtitle: 'Subtle warm flame pulsation and amber flicker.',
+          badge: 'FLAME',
+          icon: Icons.fireplace_rounded,
+          isActive: ble.activeScene == ActiveScene.candle,
+          onTap: () => ble.startScene(ActiveScene.candle),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFFFF9900), const Color(0xFFFF5500), (sin(p * 6 * pi) + 1) / 2)!,
+            const Color(0xFF882200),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Fireplace',
+          subtitle: 'Dynamic ember fluctuations between crimson and gold.',
+          badge: 'FLAME',
+          icon: Icons.local_fire_department_rounded,
+          isActive: ble.activeScene == ActiveScene.fire,
+          onTap: () => ble.startScene(ActiveScene.fire),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFFFF3A00), const Color(0xFFFFB300), (sin(p * 8 * pi) + 1) / 2)!,
+            const Color(0xFFB71C1C),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: '4-7-8 Breathing Guide',
+          subtitle: 'Relaxation pacing: 4s inhale cyan, 7s hold blue, 8s exhale amber.',
+          badge: 'WELLNESS',
+          icon: Icons.spa_rounded,
+          isActive: ble.activeScene == ActiveScene.breath478,
+          onTap: () => ble.startScene(ActiveScene.breath478),
+          colorGenerator: (p) => [
+            Color.lerp(const Color(0xFF00F0FF), const Color(0xFF9C27B0), (sin(p * 2 * pi) + 1) / 2)!,
+            const Color(0xFF3F51B5),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Heartbeat',
+          subtitle: 'Cardiovascular double lub-dub pulse in rich crimson.',
+          badge: 'PULSE',
+          icon: Icons.favorite_rounded,
+          isActive: ble.activeScene == ActiveScene.heartbeat,
+          onTap: () => ble.startScene(ActiveScene.heartbeat),
+          colorGenerator: (p) {
+            final b = (p * 4) % 1.0;
+            final isPulse = b < 0.2 || (b > 0.35 && b < 0.55);
+            return [
+              isPulse ? const Color(0xFFFF0033) : const Color(0xFF330005),
+              const Color(0xFF110002),
+            ];
+          },
+        ),
+        AnimatedEffectTile(
+          title: 'Neon Flicker',
+          subtitle: 'Authentic stutter of an atmospheric vintage neon sign.',
+          badge: 'PULSE',
+          icon: Icons.flash_on_rounded,
+          isActive: ble.activeScene == ActiveScene.neonFlicker,
+          onTap: () => ble.startScene(ActiveScene.neonFlicker),
+          colorGenerator: (p) => [
+            ((p * 12).toInt() % 3 == 0) ? const Color(0xFFFF007F) : const Color(0xFF220011),
+            const Color(0xFF440022),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Lightning',
+          subtitle: 'Sudden high-voltage thunderstorm flash burst.',
+          badge: 'BURST',
+          icon: Icons.bolt_rounded,
+          isActive: ble.activeScene == ActiveScene.lightning,
+          onTap: () => ble.startScene(ActiveScene.lightning),
+          colorGenerator: (p) => [
+            ((p * 10).toInt() % 5 == 0) ? Colors.white : const Color(0xFF0D0D1A),
+            const Color(0xFF1A1A33),
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Police',
+          subtitle: 'Alternating high-visibility red and blue emergency flash.',
+          badge: 'STROBE',
+          icon: Icons.local_police_rounded,
+          isActive: ble.activeScene == ActiveScene.police,
+          onTap: () => ble.startScene(ActiveScene.police),
+          colorGenerator: (p) => [
+            ((p * 8).toInt() % 2 == 0) ? const Color(0xFFFF0000) : const Color(0xFF0000FF),
+            Colors.black,
+          ],
+        ),
+        AnimatedEffectTile(
+          title: 'Party',
+          subtitle: 'Upbeat high-tempo chromatic disco rave pulses.',
+          badge: 'PARTY',
+          icon: Icons.celebration_rounded,
+          isActive: ble.activeScene == ActiveScene.party,
+          onTap: () => ble.startScene(ActiveScene.party),
+          colorGenerator: (p) => [
+            HSVColor.fromAHSV(1.0, ((p * 720.0).toInt() % 360).toDouble(), 1.0, 1.0).toColor(),
+            Colors.black,
+          ],
+        ),
+      ]);
+    }
+
+    // Hardware Modes Section
+    if (_selectedSection == 'Hardware Modes' || _selectedSection == 'All') {
+      for (final mode in ElkEffectCatalog.modes) {
+        tiles.add(
+          AnimatedEffectTile(
+            title: mode.name,
+            subtitle: mode.description,
+            badge: mode.hexId,
+            icon: Icons.memory_rounded,
+            isActive: ble.activeScene == ActiveScene.none && ble.currentEffectMode == mode.id,
+            onTap: () => ble.sendHardwareEffect(mode.id),
+            colorGenerator: (p) => [
+              _getHardwareModeColor(mode.id, p),
+              _getHardwareModeColor(mode.id, p + 0.3),
+            ],
+          ),
+        );
+      }
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 800 ? 3 : 2;
+        return GridView.count(
+          crossAxisCount: crossAxisCount,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 1.4,
+          children: tiles,
+        );
+      },
+    );
+  }
+
+  Color _getHardwareModeColor(int modeId, double progress) {
+    if (modeId >= 0x80 && modeId <= 0x86) {
+      // Monochrome Fades
+      const colors = [
+        Color(0xFFFF0000),
+        Color(0xFF00FF00),
+        Color(0xFF0000FF),
+        Color(0xFFFFFF00),
+        Color(0xFF00FFFF),
+        Color(0xFFFF00FF),
+        Color(0xFFFFFFFF),
+      ];
+      final base = colors[modeId - 0x80];
+      final factor = (sin(progress * 2 * pi) + 1) / 2;
+      return base.withValues(alpha: 0.2 + 0.8 * factor);
+    }
+    // Crossfades and general
+    return HSVColor.fromAHSV(1.0, ((progress * 360.0) % 360.0), 1.0, 1.0).toColor();
   }
 }

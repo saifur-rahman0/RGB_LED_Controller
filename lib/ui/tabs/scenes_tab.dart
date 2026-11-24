@@ -263,6 +263,8 @@ class ScenesTab extends StatelessWidget {
         return 'RGB Cycle';
       case ActiveScene.none:
         return 'None';
+      default:
+        return 'Ambient Scene';
     }
   }
 }

@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_ble/universal_ble.dart';
+import '../models/user_scene.dart';
 import '../protocol/elk_protocol.dart';
+import 'comfort_engine.dart';
 
 /// Connection states for the BLE controller
 enum BleLedStatus {
@@ -23,6 +26,24 @@ enum ActiveScene {
   cyberpunkPulse,
   oceanBreathe,
   rgbCycle,
+  aurora,
+  lavaLamp,
+  vaporwave,
+  sunset,
+  forest,
+  galaxy,
+  ice,
+  candle,
+  torch,
+  fire,
+  breathe,
+  breath478,
+  heartbeat,
+  neonFlicker,
+  lightning,
+  fireworks,
+  police,
+  party,
 }
 
 /// Log entry for live hex packet inspection
@@ -58,7 +79,7 @@ class _QueuedBlePacket {
 
 /// Primary BLE LED controller service managing scan, connection,
 /// 55ms coalescing throttling queue, hardware effects, software scenes,
-/// and live hex telemetry.
+/// comfort engine (fades, color balance, flash limiter), and live hex telemetry.
 class BleLedService extends ChangeNotifier {
   // Connection and device state
   BleLedStatus _status = BleLedStatus.offline;
@@ -66,6 +87,18 @@ class BleLedService extends ChangeNotifier {
 
   final List<BleDevice> _scannedDevices = [];
   List<BleDevice> get scannedDevices => List.unmodifiable(_scannedDevices);
+
+  bool _showAllDevices = false;
+  bool get showAllDevices => _showAllDevices;
+
+  /// Returns devices visible to the user (filtered by known strip criteria unless showAllDevices is true)
+  List<BleDevice> get visibleDevices {
+    if (_showAllDevices) return List.unmodifiable(_scannedDevices);
+    return List.unmodifiable(_scannedDevices.where((d) =>
+        ElkProtocol.isKnownStripDevice(d.name, d.deviceId) ||
+        d.deviceId.toLowerCase() == _lastConnectedDeviceId?.toLowerCase() ||
+        d.deviceId.toLowerCase() == _selectedDevice?.deviceId.toLowerCase()));
+  }
 
   BleDevice? _selectedDevice;
   BleDevice? get selectedDevice => _selectedDevice;
@@ -78,7 +111,10 @@ class BleLedService extends ChangeNotifier {
 
   // Active GATT UUIDs
   String _activeServiceUuid = ElkProtocol.serviceUuid;
+  String get activeServiceUuid => _activeServiceUuid;
+
   String _activeCharUuid = ElkProtocol.writeCharacteristicUuid;
+  String get activeCharUuid => _activeCharUuid;
 
   // LED Light Controls
   bool _isPoweredOn = true;
@@ -86,6 +122,7 @@ class BleLedService extends ChangeNotifier {
 
   Color _currentColor = const Color(0xFFFF0055);
   Color get currentColor => _currentColor;
+  Color? _lastSentColor;
 
   int _currentBrightness = 100; // 1..100
   int get currentBrightness => _currentBrightness;
@@ -95,6 +132,23 @@ class BleLedService extends ChangeNotifier {
 
   int _currentEffectSpeed = 50; // 1..100
   int get currentEffectSpeed => _currentEffectSpeed;
+
+  // Comfort Engine: Smooth transitions, Color balance, Flash limiter
+  FadeSpeed _fadeSpeed = FadeSpeed.smooth;
+  FadeSpeed get fadeSpeed => _fadeSpeed;
+
+  ColorBalance _colorBalance = const ColorBalance();
+  ColorBalance get colorBalance => _colorBalance;
+
+  bool _reduceFlashing = false;
+  bool get reduceFlashing => _reduceFlashing;
+
+  final FlashLimiter _flashLimiter = FlashLimiter(tau: 0.45);
+  Timer? _fadeTimer;
+
+  // User Custom Named Scenes
+  List<UserScene> _userScenes = [];
+  List<UserScene> get userScenes => List.unmodifiable(_userScenes);
 
   // Software Scene Engine
   ActiveScene _activeScene = ActiveScene.none;
@@ -156,7 +210,20 @@ class BleLedService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _autoConnectOnLaunch = prefs.getBool('autoConnectOnLaunch') ?? true;
       _turnOffOnClose = prefs.getBool('turnOffOnClose') ?? false;
+      _showAllDevices = prefs.getBool('showAllDevices') ?? false;
 
+      // Comfort settings
+      final fadeDurationMs = prefs.getInt('fadeDurationMs') ?? 700;
+      _fadeSpeed = FadeSpeed.fromDurationMs(fadeDurationMs);
+
+      final rGain = prefs.getDouble('colorBalance_r') ?? 1.0;
+      final gGain = prefs.getDouble('colorBalance_g') ?? 1.0;
+      final bGain = prefs.getDouble('colorBalance_b') ?? 1.0;
+      _colorBalance = ColorBalance(redGain: rGain, greenGain: gGain, blueGain: bGain);
+
+      _reduceFlashing = prefs.getBool('reduceFlashing') ?? false;
+
+      // Color & Brightness
       final savedColorHex = prefs.getString('lastColorHex');
       if (savedColorHex != null && savedColorHex.isNotEmpty) {
         final parsed = int.tryParse(savedColorHex.replaceFirst('#', ''), radix: 16);
@@ -168,6 +235,7 @@ class BleLedService extends ChangeNotifier {
       _currentBrightness = (prefs.getInt('lastBrightness') ?? 100).clamp(1, 100);
       _lastConnectedDeviceId = prefs.getString('lastConnectedDeviceId');
 
+      // Custom Swatches
       final savedSwatches = prefs.getStringList('customSwatches');
       if (savedSwatches != null && savedSwatches.isNotEmpty) {
         final loaded = <Color>[];
@@ -181,10 +249,95 @@ class BleLedService extends ChangeNotifier {
           _customSwatches = loaded;
         }
       }
+
+      // User Named Scenes
+      final scenesJsonList = prefs.getStringList('userCustomScenes');
+      if (scenesJsonList != null && scenesJsonList.isNotEmpty) {
+        _userScenes = scenesJsonList
+            .map((s) => UserScene.fromJson(jsonDecode(s) as Map<String, dynamic>))
+            .toList();
+      } else {
+        // Default built-in starter scenes
+        _userScenes = [
+          const UserScene(
+            id: 'scene_movie',
+            name: 'Movie Night',
+            color: Color(0xFFFF8800),
+            brightness: 40,
+            iconName: 'movie',
+          ),
+          const UserScene(
+            id: 'scene_gaming',
+            name: 'Vivid Cyber',
+            color: Color(0xFF00F0FF),
+            brightness: 100,
+            iconName: 'sports_esports',
+          ),
+          const UserScene(
+            id: 'scene_reading',
+            name: 'Warm Reading',
+            color: Color(0xFFFFE4B5),
+            brightness: 75,
+            iconName: 'menu_book',
+          ),
+          const UserScene(
+            id: 'scene_cozy',
+            name: 'Cozy Fireplace',
+            color: Color(0xFFFF3A00),
+            brightness: 60,
+            iconName: 'local_fire_department',
+          ),
+          const UserScene(
+            id: 'scene_relax',
+            name: 'Deep Relax',
+            color: Color(0xFF7C4DFF),
+            brightness: 50,
+            iconName: 'nightlife',
+          ),
+        ];
+      }
+
       notifyListeners();
     } catch (e) {
       logError('Failed to load preferences: $e');
     }
+  }
+
+  Future<void> setShowAllDevices(bool value) async {
+    _showAllDevices = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('showAllDevices', value);
+  }
+
+  Future<void> setFadeSpeed(FadeSpeed speed) async {
+    _fadeSpeed = speed;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('fadeDurationMs', speed.durationMs);
+  }
+
+  Future<void> setColorBalance(ColorBalance balance) async {
+    _colorBalance = balance;
+    notifyListeners();
+    // Re-apply to active strip color
+    if (_isPoweredOn) {
+      sendRgb(_currentColor, skipFade: true);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('colorBalance_r', balance.redGain);
+    await prefs.setDouble('colorBalance_g', balance.greenGain);
+    await prefs.setDouble('colorBalance_b', balance.blueGain);
+  }
+
+  Future<void> setReduceFlashing(bool value) async {
+    _reduceFlashing = value;
+    if (value) {
+      _flashLimiter.reset();
+    }
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('reduceFlashing', value);
   }
 
   Future<void> setAutoConnectOnLaunch(bool value) async {
@@ -204,7 +357,7 @@ class BleLedService extends ChangeNotifier {
   Future<void> saveCustomSwatch(Color color) async {
     if (_customSwatches.any((c) => c.toARGB32() == color.toARGB32())) return;
     _customSwatches.insert(0, color);
-    if (_customSwatches.length > 20) {
+    if (_customSwatches.length > 24) {
       _customSwatches.removeLast();
     }
     notifyListeners();
@@ -231,6 +384,57 @@ class BleLedService extends ChangeNotifier {
       return '#$r$g$b'.toUpperCase();
     }).toList();
     await prefs.setStringList('customSwatches', hexList);
+  }
+
+  // -------------------------------------------------------------
+  // USER NAMED SCENES MANAGEMENT
+  // -------------------------------------------------------------
+  Future<void> saveUserScene(String name, {Color? color, int? brightness, int? effectMode, int? effectSpeed}) async {
+    final newScene = UserScene(
+      id: 'scene_${DateTime.now().millisecondsSinceEpoch}',
+      name: name.trim().isEmpty ? 'Scene ${_userScenes.length + 1}' : name.trim(),
+      color: color ?? _currentColor,
+      brightness: brightness ?? _currentBrightness,
+      effectMode: effectMode,
+      effectSpeed: effectSpeed,
+    );
+    _userScenes.add(newScene);
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    final list = _userScenes.map((s) => jsonEncode(s.toJson())).toList();
+    await prefs.setStringList('userCustomScenes', list);
+  }
+
+  Future<void> deleteUserScene(String id) async {
+    _userScenes.removeWhere((s) => s.id == id);
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    final list = _userScenes.map((s) => jsonEncode(s.toJson())).toList();
+    await prefs.setStringList('userCustomScenes', list);
+  }
+
+  void applyUserScene(UserScene scene) {
+    stopScene();
+    _isPoweredOn = true;
+    _currentBrightness = scene.brightness;
+    _currentColor = scene.color;
+
+    // Send brightness
+    sendBrightness(scene.brightness);
+
+    if (scene.effectMode != null) {
+      sendHardwareEffect(scene.effectMode!);
+      if (scene.effectSpeed != null) {
+        sendEffectSpeed(scene.effectSpeed!);
+      }
+    } else {
+      sendRgb(scene.color);
+    }
+
+    logInfo('Applied Scene: ${scene.name} (Brightness: ${scene.brightness}%)');
+    notifyListeners();
   }
 
   Future<void> _persistLastColor(Color c) async {
@@ -262,17 +466,18 @@ class BleLedService extends ChangeNotifier {
         _scannedDevices.add(device);
       }
 
-      // Check if target device FF:FF:10:C5:29:1F, last connected device, or ELK-BLEDOM
+      // Check if target device FF:FF:10:C5:29:1F, last connected device, or recognized strip
       final isTargetMac = device.deviceId.toUpperCase() == ElkProtocol.targetDeviceAddress;
-      final isLastDevice = _lastConnectedDeviceId != null && device.deviceId.toLowerCase() == _lastConnectedDeviceId!.toLowerCase();
-      final isElkNamed = (device.name ?? '').toUpperCase().contains(ElkProtocol.targetDeviceNamePrefix);
+      final isLastDevice = _lastConnectedDeviceId != null &&
+          device.deviceId.toLowerCase() == _lastConnectedDeviceId!.toLowerCase();
+      final isKnownStrip = ElkProtocol.isKnownStripDevice(device.name, device.deviceId);
 
-      if (isTargetMac || (_selectedDevice == null && (isElkNamed || isLastDevice))) {
+      if (isTargetMac || (_selectedDevice == null && (isKnownStrip || isLastDevice))) {
         _selectedDevice = device;
-        logInfo('Discovered Target BLE Device: ${device.name ?? 'Unnamed'} [${device.deviceId}]');
+        logInfo('Identified Compatible BLE Strip: ${device.name ?? 'Unnamed'} [${device.deviceId}]');
 
         if (_autoConnectOnLaunch && _status != BleLedStatus.connected && _status != BleLedStatus.connecting) {
-          logInfo('Auto-connecting to discovered target device [${device.deviceId}]...');
+          logInfo('Auto-connecting to target peripheral [${device.deviceId}]...');
           connectDevice(device);
         }
       }
@@ -302,7 +507,7 @@ class BleLedService extends ChangeNotifier {
     try {
       _scannedDevices.clear();
       _status = BleLedStatus.scanning;
-      logInfo('Starting WinRT BLE Scan for ELK-BLEDOM devices...');
+      logInfo('Starting WinRT BLE Scan for LED strip controllers...');
       notifyListeners();
 
       await UniversalBle.startScan();
@@ -326,7 +531,7 @@ class BleLedService extends ChangeNotifier {
       if (_status == BleLedStatus.scanning) {
         _status = BleLedStatus.offline;
       }
-      logInfo('BLE Scan stopped. ${_scannedDevices.length} devices found.');
+      logInfo('BLE Scan stopped. ${_scannedDevices.length} peripherals located.');
       notifyListeners();
     } catch (e) {
       logError('Failed to stop scan: $e');
@@ -339,7 +544,7 @@ class BleLedService extends ChangeNotifier {
   }
 
   // -------------------------------------------------------------
-  // CONNECTION & HANDSHAKE
+  // CONNECTION, AUTO-DETECTION & HANDSHAKE
   // -------------------------------------------------------------
   Future<void> connectDevice(BleDevice device) async {
     _reconnectTimer?.cancel();
@@ -358,10 +563,11 @@ class BleLedService extends ChangeNotifier {
       logInfo('Discovering GATT services and characteristics...');
       final services = await UniversalBle.discoverServices(device.deviceId);
 
-      // Search for ELK-BLEDOM service (0000fff0 / fff0) and characteristic (0000fff3 / fff3)
+      // Robust Multi-Candidate Characteristic Resolution
       String? matchedServiceUuid;
       String? matchedCharUuid;
 
+      // First pass: Match known services and write characteristics
       for (final service in services) {
         if (ElkProtocol.isServiceMatch(service.uuid)) {
           matchedServiceUuid = service.uuid;
@@ -371,7 +577,36 @@ class BleLedService extends ChangeNotifier {
               break;
             }
           }
-          break;
+          if (matchedCharUuid != null) break;
+        }
+      }
+
+      // Second pass: Check if any characteristic matches known write UUID regardless of service
+      if (matchedCharUuid == null) {
+        for (final service in services) {
+          for (final char in service.characteristics) {
+            if (ElkProtocol.isWriteCharMatch(char.uuid)) {
+              matchedServiceUuid = service.uuid;
+              matchedCharUuid = char.uuid;
+              break;
+            }
+          }
+          if (matchedCharUuid != null) break;
+        }
+      }
+
+      // Third pass: Fallback to any characteristic advertising writeWithoutResponse or write
+      if (matchedCharUuid == null) {
+        for (final service in services) {
+          for (final char in service.characteristics) {
+            if (char.properties.contains(CharacteristicProperty.writeWithoutResponse) ||
+                char.properties.contains(CharacteristicProperty.write)) {
+              matchedServiceUuid = service.uuid;
+              matchedCharUuid = char.uuid;
+              break;
+            }
+          }
+          if (matchedCharUuid != null) break;
         }
       }
 
@@ -398,7 +633,7 @@ class BleLedService extends ChangeNotifier {
 
       _status = BleLedStatus.connected;
       _reconnectAttempts = 0;
-      logInfo('Successfully connected and authenticated with ${device.name ?? 'ELK-BLEDOM'}!');
+      logInfo('Successfully connected and authenticated with ${device.name ?? 'LED Controller'}!');
 
       // Save as last connected device in preferences
       final prefs = await SharedPreferences.getInstance();
@@ -406,7 +641,7 @@ class BleLedService extends ChangeNotifier {
 
       // Restore last known light state
       if (_isPoweredOn) {
-        sendRgb(_currentColor);
+        sendRgb(_currentColor, skipFade: true);
         sendBrightness(_currentBrightness);
       }
 
@@ -455,11 +690,6 @@ class BleLedService extends ChangeNotifier {
   // -------------------------------------------------------------
   // 55MS RATE-LIMITED / COALESCING PACKET QUEUE
   // -------------------------------------------------------------
-  /// Enqueues a packet.
-  /// If [isContinuous] is true (color wheel drags, brightness slider), intermediate
-  /// packets coalesce and drop stale frames, sending only the freshest value.
-  /// If [isContinuous] is false (power, effect mode switch, handshake), the packet
-  /// is queued strictly in FIFO order.
   void enqueuePacket(Uint8List packet, String description, {bool isContinuous = false}) {
     if (isContinuous) {
       _pendingStreamPacket = _QueuedBlePacket(packet, description);
@@ -532,34 +762,96 @@ class BleLedService extends ChangeNotifier {
   /// Master Power OFF
   void powerOff() {
     stopScene();
+    _fadeTimer?.cancel();
     _isPoweredOn = false;
     final packet = ElkProtocol.powerOff();
     enqueuePacket(packet, 'Power OFF', isContinuous: false);
     notifyListeners();
   }
 
-  /// Set Solid RGB Color (coalesced 55ms)
-  void sendRgb(Color color, {bool fromScene = false}) {
+  /// Toggle Master Power
+  void togglePower() {
+    if (_isPoweredOn) {
+      powerOff();
+    } else {
+      powerOn();
+    }
+  }
+
+  /// Set Solid RGB Color with optional Smoothstep Comfort Fading
+  void sendRgb(Color targetColor, {bool fromScene = false, bool skipFade = false}) {
     if (!fromScene) {
       stopScene();
     }
 
-    _currentColor = color;
+    _currentColor = targetColor;
     _isPoweredOn = true;
 
-    final r = (color.r * 255).round().clamp(0, 255);
-    final g = (color.g * 255).round().clamp(0, 255);
-    final b = (color.b * 255).round().clamp(0, 255);
+    Color processed = targetColor;
 
-    final hexStr = '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
-    final packet = ElkProtocol.setRgb(r, g, b);
+    // Apply "Reduce Flashing" low-pass filter if active
+    if (_reduceFlashing) {
+      processed = _flashLimiter.step(processed, 0.055);
+    }
 
-    enqueuePacket(packet, 'Solid RGB: $hexStr', isContinuous: true);
+    // Apply RGB color balance calibration
+    final balancedColor = _colorBalance.apply(processed);
+
+    // If smooth fading is active and not from a scene, calculate smoothstep interpolation
+    if (!skipFade && !fromScene && _fadeSpeed != FadeSpeed.off && _lastSentColor != null) {
+      _fadeTimer?.cancel();
+      final steps = calculateFadeSteps(_lastSentColor!, balancedColor, _fadeSpeed.duration);
+      int stepIndex = 0;
+
+      _fadeTimer = Timer.periodic(const Duration(milliseconds: 55), (timer) {
+        if (stepIndex >= steps.length) {
+          timer.cancel();
+          _lastSentColor = balancedColor;
+          return;
+        }
+        _sendRgbDirect(steps[stepIndex]);
+        stepIndex++;
+      });
+    } else {
+      _sendRgbDirect(balancedColor);
+      _lastSentColor = balancedColor;
+    }
 
     if (!fromScene) {
-      _persistLastColor(color);
+      _persistLastColor(targetColor);
     }
     notifyListeners();
+  }
+
+  void _sendRgbDirect(Color c) {
+    final r = (c.r * 255).round().clamp(0, 255);
+    final g = (c.g * 255).round().clamp(0, 255);
+    final b = (c.b * 255).round().clamp(0, 255);
+
+    final hexStr =
+        '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'
+            .toUpperCase();
+    final packet = ElkProtocol.setRgb(r, g, b);
+    enqueuePacket(packet, 'Solid RGB: $hexStr', isContinuous: true);
+  }
+
+  /// Flash Alert (e.g. for notifications, OBS stream event, incoming calls)
+  Future<void> flashAlert(Color alertColor, {int flashes = 2, Duration onDuration = const Duration(milliseconds: 250)}) async {
+    final prevColor = _currentColor;
+    final prevPower = _isPoweredOn;
+
+    for (int i = 0; i < flashes; i++) {
+      sendRgb(alertColor, skipFade: true, fromScene: true);
+      await Future.delayed(onDuration);
+      if (prevPower) {
+        sendRgb(prevColor, skipFade: true, fromScene: true);
+      } else {
+        powerOff();
+      }
+      if (i < flashes - 1) {
+        await Future.delayed(const Duration(milliseconds: 150));
+      }
+    }
   }
 
   /// Set Brightness (1-100%, coalesced 55ms)
@@ -592,7 +884,7 @@ class BleLedService extends ChangeNotifier {
   }
 
   // -------------------------------------------------------------
-  // SOFTWARE ANIMATION SCENES
+  // SOFTWARE ANIMATION SCENES (RGBZap Suite)
   // -------------------------------------------------------------
   void startScene(ActiveScene scene) {
     stopScene();
@@ -600,12 +892,11 @@ class BleLedService extends ChangeNotifier {
     _sceneStep = 0.0;
     _isPoweredOn = true;
 
-    // 65ms tick feeds cleanly into 55ms coalescing sender
     _sceneTimer = Timer.periodic(const Duration(milliseconds: 65), (timer) {
       _tickScene();
     });
 
-    logInfo('Started software scene: ${_sceneName(scene)}');
+    logInfo('Started software effect: ${_sceneName(scene)}');
     notifyListeners();
   }
 
@@ -614,7 +905,7 @@ class BleLedService extends ChangeNotifier {
       _sceneTimer?.cancel();
       _sceneTimer = null;
       _activeScene = ActiveScene.none;
-      logInfo('Software animation scene stopped.');
+      logInfo('Software animation effect stopped.');
       notifyListeners();
     }
   }
@@ -625,7 +916,7 @@ class BleLedService extends ChangeNotifier {
 
     switch (_activeScene) {
       case ActiveScene.cozyFire:
-        // Warm flame embers: Flicker between deep crimson orange and golden amber
+      case ActiveScene.fire:
         final flicker = _random.nextDouble() * 0.25;
         final r = (240 + (_random.nextDouble() * 15)).clamp(200, 255).toInt();
         final g = (45 + (_random.nextDouble() * 45) + (sin(_sceneStep * 2.5) * 15)).clamp(30, 110).toInt();
@@ -633,38 +924,149 @@ class BleLedService extends ChangeNotifier {
         generatedColor = Color.fromARGB(255, r, (g * (1.0 - flicker)).toInt(), b);
         break;
 
-      case ActiveScene.cyberpunkPulse:
-        // Neon Pink (#FF007F) to Electric Cyan (#00F0FF) to Deep Violet (#9D00FF)
-        final t = (sin(_sceneStep * 1.8) + 1.0) / 2.0; // 0..1
-        if (t < 0.5) {
-          final factor = t * 2.0;
-          generatedColor = Color.lerp(
-            const Color(0xFFFF007F), // Neon Pink
-            const Color(0xFF00F0FF), // Electric Cyan
-            factor,
-          )!;
-        } else {
-          final factor = (t - 0.5) * 2.0;
-          generatedColor = Color.lerp(
-            const Color(0xFF00F0FF), // Electric Cyan
-            const Color(0xFF9D00FF), // Neon Violet
-            factor,
-          )!;
-        }
+      case ActiveScene.candle:
+        final flicker = _random.nextDouble() * 0.15;
+        final r = 255;
+        final g = (140 + (_random.nextDouble() * 20)).toInt();
+        final b = 20;
+        final intensity = (1.0 - flicker) * (0.85 + sin(_sceneStep * 1.5) * 0.15);
+        generatedColor = Color.fromARGB(255, (r * intensity).round(), (g * intensity).round(), (b * intensity).round());
         break;
 
-      case ActiveScene.oceanBreathe:
-        // Deep Sea Blue to Vivid Aqua wave
-        final t = (sin(_sceneStep * 1.2) + 1.0) / 2.0; // 0..1
+      case ActiveScene.torch:
+        final r = (220 + (_random.nextDouble() * 35)).toInt();
+        final g = (70 + (_random.nextDouble() * 40)).toInt();
+        final b = 5;
+        generatedColor = Color.fromARGB(255, r, g, b);
+        break;
+
+      case ActiveScene.aurora:
+        final t = (sin(_sceneStep * 0.8) + 1.0) / 2.0;
         generatedColor = Color.lerp(
-          const Color(0xFF001F3F), // Deep Oceanic Navy
-          const Color(0xFF00D2FF), // Vivid Aqua
+          const Color(0xFF00FF88), // Green
+          const Color(0xFF7C4DFF), // Purple
           t,
         )!;
         break;
 
+      case ActiveScene.lavaLamp:
+        final t = (sin(_sceneStep * 0.6) + 1.0) / 2.0;
+        generatedColor = Color.lerp(
+          const Color(0xFFFF2200), // Lava Red
+          const Color(0xFFFF8800), // Hot Orange
+          t,
+        )!;
+        break;
+
+      case ActiveScene.vaporwave:
+        final t = (sin(_sceneStep * 1.1) + 1.0) / 2.0;
+        generatedColor = Color.lerp(
+          const Color(0xFFFF007F), // Neon Magenta
+          const Color(0xFF00F0FF), // Neon Cyan
+          t,
+        )!;
+        break;
+
+      case ActiveScene.sunset:
+        final t = (sin(_sceneStep * 0.7) + 1.0) / 2.0;
+        if (t < 0.5) {
+          generatedColor = Color.lerp(const Color(0xFF4A0E4E), const Color(0xFFFF5722), t * 2)!;
+        } else {
+          generatedColor = Color.lerp(const Color(0xFFFF5722), const Color(0xFFFFC107), (t - 0.5) * 2)!;
+        }
+        break;
+
+      case ActiveScene.forest:
+        final t = (sin(_sceneStep * 0.9) + 1.0) / 2.0;
+        generatedColor = Color.lerp(const Color(0xFF1B5E20), const Color(0xFF00E676), t)!;
+        break;
+
+      case ActiveScene.galaxy:
+        final t = (sin(_sceneStep * 0.75) + 1.0) / 2.0;
+        generatedColor = Color.lerp(const Color(0xFF0D083B), const Color(0xFFE040FB), t)!;
+        break;
+
+      case ActiveScene.ice:
+        final t = (sin(_sceneStep * 1.0) + 1.0) / 2.0;
+        generatedColor = Color.lerp(const Color(0xFFE0F7FA), const Color(0xFF00E5FF), t)!;
+        break;
+
+      case ActiveScene.breathe:
+        final t = (sin(_sceneStep * 1.2) + 1.0) / 2.0;
+        generatedColor = Color.lerp(const Color(0xFF001122), const Color(0xFF00D2FF), t)!;
+        break;
+
+      case ActiveScene.breath478:
+        // 4-7-8 Breathing Guide (19-second cycle)
+        final cycle = (_sceneStep * 1.5) % 19.0;
+        if (cycle < 4.0) {
+          // Inhale 4s: Cyan swells
+          final t = cycle / 4.0;
+          generatedColor = Color.lerp(const Color(0xFF002233), const Color(0xFF00F0FF), t)!;
+        } else if (cycle < 11.0) {
+          // Hold 7s: Deep soothing indigo
+          generatedColor = const Color(0xFF3F51B5);
+        } else {
+          // Exhale 8s: Warm gentle purple/amber fading down
+          final t = (cycle - 11.0) / 8.0;
+          generatedColor = Color.lerp(const Color(0xFF9C27B0), const Color(0xFF002233), t)!;
+        }
+        break;
+
+      case ActiveScene.heartbeat:
+        final beat = (_sceneStep * 3.0) % 3.0;
+        if (beat < 0.25 || (beat > 0.4 && beat < 0.65)) {
+          generatedColor = const Color(0xFFFF0033);
+        } else {
+          generatedColor = const Color(0xFF220005);
+        }
+        break;
+
+      case ActiveScene.neonFlicker:
+        final isOff = _random.nextDouble() < 0.12;
+        generatedColor = isOff ? const Color(0xFF110011) : const Color(0xFFFF007F);
+        break;
+
+      case ActiveScene.lightning:
+        final isBurst = _random.nextDouble() < 0.06;
+        generatedColor = isBurst ? const Color(0xFFFFFFFF) : const Color(0xFF050510);
+        break;
+
+      case ActiveScene.fireworks:
+        final isBang = _random.nextDouble() < 0.1;
+        if (isBang) {
+          final hue = _random.nextDouble() * 360.0;
+          generatedColor = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
+        } else {
+          generatedColor = const Color(0xFF050508);
+        }
+        break;
+
+      case ActiveScene.police:
+        final step = (_sceneStep * 8.0).toInt() % 4;
+        generatedColor = (step == 0 || step == 1) ? const Color(0xFFFF0000) : const Color(0xFF0000FF);
+        break;
+
+      case ActiveScene.party:
+        final hue = (_random.nextDouble() * 360.0);
+        generatedColor = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
+        break;
+
+      case ActiveScene.cyberpunkPulse:
+        final t = (sin(_sceneStep * 1.8) + 1.0) / 2.0;
+        if (t < 0.5) {
+          generatedColor = Color.lerp(const Color(0xFFFF007F), const Color(0xFF00F0FF), t * 2.0)!;
+        } else {
+          generatedColor = Color.lerp(const Color(0xFF00F0FF), const Color(0xFF9D00FF), (t - 0.5) * 2.0)!;
+        }
+        break;
+
+      case ActiveScene.oceanBreathe:
+        final t = (sin(_sceneStep * 1.2) + 1.0) / 2.0;
+        generatedColor = Color.lerp(const Color(0xFF001F3F), const Color(0xFF00D2FF), t)!;
+        break;
+
       case ActiveScene.rgbCycle:
-        // Smooth 360-degree HSV rainbow rotation
         final hue = (_sceneStep * 60.0) % 360.0;
         generatedColor = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
         break;
@@ -673,22 +1075,11 @@ class BleLedService extends ChangeNotifier {
         return;
     }
 
-    sendRgb(generatedColor, fromScene: true);
+    sendRgb(generatedColor, fromScene: true, skipFade: true);
   }
 
   String _sceneName(ActiveScene s) {
-    switch (s) {
-      case ActiveScene.cozyFire:
-        return 'Cozy Fire';
-      case ActiveScene.cyberpunkPulse:
-        return 'Cyberpunk Pulse';
-      case ActiveScene.oceanBreathe:
-        return 'Ocean Breathe';
-      case ActiveScene.rgbCycle:
-        return 'RGB Cycle';
-      case ActiveScene.none:
-        return 'None';
-    }
+    return s.name;
   }
 
   // -------------------------------------------------------------
@@ -761,7 +1152,6 @@ class BleLedService extends ChangeNotifier {
           offPacket,
           withoutResponse: true,
         );
-        // Allow brief dispatch window
         await Future.delayed(const Duration(milliseconds: 150));
       } catch (_) {}
     }
@@ -772,6 +1162,7 @@ class BleLedService extends ChangeNotifier {
     _reconnectTimer?.cancel();
     _throttleTimer?.cancel();
     _sceneTimer?.cancel();
+    _fadeTimer?.cancel();
     super.dispose();
   }
 }

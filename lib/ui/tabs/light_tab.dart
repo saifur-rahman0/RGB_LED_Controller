@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../services/ble_led_service.dart';
+import '../../services/comfort_engine.dart';
 import '../widgets/glowing_card.dart';
 
 class LightTab extends StatefulWidget {
@@ -14,10 +15,9 @@ class LightTab extends StatefulWidget {
 }
 
 class _LightTabState extends State<LightTab> {
-  // Curated standard swatches
   static const List<Color> _standardPresets = [
     Color(0xFFFFFFFF), // Pure White
-    Color(0xFFFFE4B5), // Warm White / Moccasin
+    Color(0xFFFFE4B5), // Warm White
     Color(0xFFFF0000), // Red
     Color(0xFFFF5722), // Deep Orange
     Color(0xFFFF9800), // Amber
@@ -227,7 +227,7 @@ class _LightTabState extends State<LightTab> {
           ),
           const SizedBox(height: 20),
 
-          // 2. BRIGHTNESS SLIDER CARD
+          // 2. HARDWARE BRIGHTNESS SLIDER
           GlowingCard(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             child: Column(
@@ -300,7 +300,105 @@ class _LightTabState extends State<LightTab> {
           ),
           const SizedBox(height: 20),
 
-          // 3. INTERACTIVE COLOR WHEEL CARD
+          // 3. USER CUSTOM NAMED SCENES (RGBZap Core Feature)
+          GlowingCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.movie_filter_rounded, size: 18, color: Color(0xFF38BDF8)),
+                        SizedBox(width: 8),
+                        Text(
+                          'CUSTOM NAMED SCENES',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                            color: Color(0xFFA1A1AA),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF38BDF8),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.bookmark_add_rounded, size: 16),
+                      label: const Text('Save Current as Scene', style: TextStyle(fontSize: 12)),
+                      onPressed: () => _showSaveSceneDialog(context, ble),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Scenes Grid
+                if (ble.userScenes.isEmpty)
+                  const Text('No custom scenes saved yet.', style: TextStyle(fontSize: 12, color: Color(0xFF71717A)))
+                else
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: ble.userScenes.map((scene) {
+                      return InkWell(
+                        onTap: () => ble.applyUserScene(scene),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF27272A),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: scene.color.withValues(alpha: 0.6)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: scene.color,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: scene.color.withValues(alpha: 0.8),
+                                      blurRadius: 6,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                scene.name,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${scene.brightness}%',
+                                style: const TextStyle(fontSize: 10, color: Color(0xFFA1A1AA)),
+                              ),
+                              const SizedBox(width: 6),
+                              InkWell(
+                                onTap: () => ble.deleteUserScene(scene.id),
+                                child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF71717A)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 4. INTERACTIVE CHROMATIC WHEEL CARD
           GlowingCard(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -323,7 +421,6 @@ class _LightTabState extends State<LightTab> {
                         ),
                       ],
                     ),
-                    // Manual Hex Dialog Trigger
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFA1A1AA),
@@ -338,8 +435,6 @@ class _LightTabState extends State<LightTab> {
                   ],
                 ),
                 const SizedBox(height: 16),
-
-                // Responsive Color Wheel
                 Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 380),
@@ -363,13 +458,88 @@ class _LightTabState extends State<LightTab> {
           ),
           const SizedBox(height: 20),
 
-          // 4. QUICK PRESETS & CUSTOM SWATCHES CARD
+          // 5. COMFORT ENGINE (SMOOTH FADING & COLOR BALANCE)
           GlowingCard(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Standard Swatches
+                const Row(
+                  children: [
+                    Icon(Icons.spa_rounded, size: 18, color: Color(0xFF10B981)),
+                    SizedBox(width: 8),
+                    Text(
+                      'COMFORT ENGINE (SMOOTH FADING & COLOR BALANCE)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                        color: Color(0xFFA1A1AA),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Smooth Fades Selector
+                Row(
+                  children: [
+                    const SizedBox(
+                      width: 140,
+                      child: Text('Color Transition Fade:', style: TextStyle(fontSize: 12, color: Colors.white)),
+                    ),
+                    Wrap(
+                      spacing: 8,
+                      children: FadeSpeed.values.map((fs) {
+                        final isSel = ble.fadeSpeed == fs;
+                        return ChoiceChip(
+                          label: Text(fs.label),
+                          selected: isSel,
+                          selectedColor: const Color(0xFF10B981),
+                          backgroundColor: const Color(0xFF27272A),
+                          labelStyle: TextStyle(
+                            fontSize: 11,
+                            color: isSel ? Colors.white : const Color(0xFFA1A1AA),
+                            fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          onSelected: (val) {
+                            if (val) ble.setFadeSpeed(fs);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Divider(color: Color(0xFF27272A)),
+                const SizedBox(height: 8),
+
+                // Color Balance calibration
+                const Text(
+                  'White Balance / Channel Gain Calibration (Fixes bluish/pinkish LED tints)',
+                  style: TextStyle(fontSize: 11.5, color: Color(0xFFA1A1AA)),
+                ),
+                const SizedBox(height: 8),
+                _buildGainSlider('Red Gain', ble.colorBalance.redGain, const Color(0xFFEF4444), (v) {
+                  ble.setColorBalance(ble.colorBalance.copyWith(redGain: v));
+                }),
+                _buildGainSlider('Green Gain', ble.colorBalance.greenGain, const Color(0xFF10B981), (v) {
+                  ble.setColorBalance(ble.colorBalance.copyWith(greenGain: v));
+                }),
+                _buildGainSlider('Blue Gain', ble.colorBalance.blueGain, const Color(0xFF38BDF8), (v) {
+                  ble.setColorBalance(ble.colorBalance.copyWith(blueGain: v));
+                }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 6. QUICK PRESETS & CUSTOM SWATCHES CARD
+          GlowingCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 const Row(
                   children: [
                     Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFFA855F7)),
@@ -462,7 +632,7 @@ class _LightTabState extends State<LightTab> {
                         isSelected: isSelected,
                         onTap: () => ble.sendRgb(color),
                         onLongPress: () {
-                          _confirmDeleteSwatch(context, ble, color);
+                          ble.removeCustomSwatch(color);
                         },
                       );
                     }).toList(),
@@ -475,6 +645,37 @@ class _LightTabState extends State<LightTab> {
     );
   }
 
+  Widget _buildGainSlider(String label, double val, Color color, ValueChanged<double> onChanged) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),
+        ),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: color,
+              inactiveTrackColor: const Color(0xFF27272A),
+              thumbColor: color,
+              trackHeight: 3,
+            ),
+            child: Slider(
+              value: val,
+              min: 0.2,
+              max: 1.0,
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 45,
+          child: Text('${(val * 100).toInt()}%', style: const TextStyle(fontSize: 11, color: Color(0xFFA1A1AA))),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSwatchTile({
     required Color color,
     required bool isSelected,
@@ -482,13 +683,12 @@ class _LightTabState extends State<LightTab> {
     VoidCallback? onLongPress,
   }) {
     return Tooltip(
-      message: '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}${onLongPress != null ? ' (Long press to delete)' : ''}',
+      message: '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+        child: Container(
           width: 38,
           height: 38,
           decoration: BoxDecoration(
@@ -506,13 +706,7 @@ class _LightTabState extends State<LightTab> {
                       spreadRadius: 2,
                     ),
                   ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                : [],
           ),
           child: isSelected
               ? Icon(
@@ -528,28 +722,34 @@ class _LightTabState extends State<LightTab> {
     );
   }
 
-  void _confirmDeleteSwatch(BuildContext context, BleLedService ble, Color color) {
+  void _showSaveSceneDialog(BuildContext context, BleLedService ble) {
+    final nameCtrl = TextEditingController(text: 'My Scene');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF18181B),
-        title: const Text('Delete Custom Swatch', style: TextStyle(color: Colors.white)),
-        content: Text(
-          'Remove #${color.toARGB32().toRadixString(16).substring(2).toUpperCase()} from your saved swatches?',
-          style: const TextStyle(color: Color(0xFFA1A1AA)),
+        title: const Text('Save Current Lighting as Scene', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            labelText: 'Scene Name',
+            labelStyle: TextStyle(color: Color(0xFFA1A1AA)),
+            filled: true,
+            fillColor: Color(0xFF27272A),
+            border: OutlineInputBorder(),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF71717A))),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF38BDF8)),
             onPressed: () {
-              ble.removeCustomSwatch(color);
+              ble.saveUserScene(nameCtrl.text);
               Navigator.pop(ctx);
             },
-            child: const Text('Delete'),
+            child: const Text('Save', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -568,18 +768,14 @@ class _LightTabState extends State<LightTab> {
           autofocus: true,
           style: const TextStyle(fontFamily: 'monospace', color: Colors.white),
           decoration: const InputDecoration(
-            hintText: '#RRGGBB (e.g. #00FF88)',
-            hintStyle: TextStyle(color: Color(0xFF71717A)),
+            hintText: '#RRGGBB',
             filled: true,
             fillColor: Color(0xFF27272A),
-            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
+            border: OutlineInputBorder(),
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF71717A))),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF38BDF8)),
             onPressed: () {
