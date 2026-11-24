@@ -16,31 +16,31 @@ class ScreenSyncTab extends StatelessWidget {
         final activeColor = screenSync.smoothedColor;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. MASTER SCREEN SYNC CONTROLLER BANNER
+              // 1. MASTER SCREEN SYNC CONTROLLER BANNER (MINIMAL)
               GlowingCard(
                 glowColor: activeColor,
                 isGlowing: isRunning,
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Row(
                   children: [
                     // Glowing circular indicator
                     Container(
-                      width: 54,
-                      height: 54,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isRunning ? activeColor : const Color(0xFF27272A),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
                         boxShadow: isRunning
                             ? [
                                 BoxShadow(
                                   color: activeColor.withValues(alpha: 0.65),
-                                  blurRadius: 24,
-                                  spreadRadius: 3,
+                                  blurRadius: 14,
+                                  spreadRadius: 1,
                                 ),
                               ]
                             : [],
@@ -53,11 +53,11 @@ class ScreenSyncTab extends StatelessWidget {
                                   ? Colors.white
                                   : Colors.black)
                               : const Color(0xFF71717A),
-                          size: 26,
+                          size: 18,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
 
                     Expanded(
                       child: Column(
@@ -68,16 +68,16 @@ class ScreenSyncTab extends StatelessWidget {
                               Text(
                                 isRunning ? 'AMBILIGHT SCREEN SYNC ACTIVE' : 'SCREEN SYNC STANDBY',
                                 style: TextStyle(
-                                  fontSize: 10.5,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.0,
+                                  letterSpacing: 0.8,
                                   color: isRunning ? const Color(0xFF10B981) : const Color(0xFF71717A),
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                width: 6,
-                                height: 6,
+                                width: 5,
+                                height: 5,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: isRunning ? const Color(0xFF10B981) : const Color(0xFF71717A),
@@ -85,17 +85,19 @@ class ScreenSyncTab extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 1),
                           Text(
                             isRunning
-                                ? 'Sampling display at 15 FPS via Win32 hardware acceleration'
-                                : 'Synchronize your LED strip to the dominant colors of your screen',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFFA1A1AA)),
+                                ? 'Sampling at 15 FPS via Win32 GDI acceleration'
+                                : 'Sync lights with dominant screen colors',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFFA1A1AA)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
 
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
@@ -106,35 +108,35 @@ class ScreenSyncTab extends StatelessWidget {
                         side: BorderSide(
                           color: isRunning ? const Color(0xFFEF4444) : const Color(0xFF10B981),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: Icon(isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded, size: 20),
+                      icon: Icon(isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded, size: 16),
                       label: Text(
-                        isRunning ? 'Stop Sync' : 'Start Sync',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        isRunning ? 'Stop' : 'Start',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       onPressed: () => screenSync.toggle(),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-              // 2. CAPTURE AREA & ALGORITHM CONFIGURATION
+              // 2. CAPTURE AREA & ALGORITHM CONFIGURATION (COMPACT)
               GlowingCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.crop_free_rounded, size: 18, color: Color(0xFF38BDF8)),
-                        SizedBox(width: 8),
+                        Icon(Icons.crop_free_rounded, size: 16, color: Color(0xFF38BDF8)),
+                        SizedBox(width: 6),
                         Text(
                           'SCREEN SAMPLING GEOMETRY',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.8,
                             color: Color(0xFFA1A1AA),
@@ -142,33 +144,33 @@ class ScreenSyncTab extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 10),
 
                     // Area Selector Dropdown
                     Row(
                       children: [
                         const SizedBox(
-                          width: 130,
+                          width: 110,
                           child: Text(
                             'Sample Area:',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ),
                         Expanded(
                           child: Container(
-                            height: 38,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            height: 32,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(
                               color: const Color(0xFF27272A),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                               border: Border.all(color: const Color(0xFF3F3F46)),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<ScreenSyncArea>(
                                 value: screenSync.area,
                                 dropdownColor: const Color(0xFF1C1C20),
-                                icon: const Icon(Icons.arrow_drop_down_rounded, color: Colors.white70),
-                                style: const TextStyle(fontSize: 13, color: Colors.white),
+                                icon: const Icon(Icons.arrow_drop_down_rounded, color: Colors.white70, size: 18),
+                                style: const TextStyle(fontSize: 12, color: Colors.white),
                                 items: ScreenSyncArea.values.map((area) {
                                   return DropdownMenuItem(
                                     value: area,
@@ -184,27 +186,27 @@ class ScreenSyncTab extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       screenSync.area.description,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF71717A)),
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF71717A)),
                     ),
 
-                    const SizedBox(height: 16),
-                    const Divider(color: Color(0xFF27272A)),
                     const SizedBox(height: 10),
+                    const Divider(color: Color(0xFF27272A)),
+                    const SizedBox(height: 6),
 
                     // Ignore Black Bars Switch
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       activeThumbColor: const Color(0xFF38BDF8),
                       title: const Text(
-                        'Ignore Black Bars (Letterbox / Pillarbox Crop)',
-                        style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 13),
+                        'Ignore Black Bars (Cinema Crop)',
+                        style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 11.5),
                       ),
                       subtitle: const Text(
-                        'Automatically trims dark cinema bars on widescreen films so active movie colors are matched.',
-                        style: TextStyle(fontSize: 11.5, color: Color(0xFFA1A1AA)),
+                        'Automatically trims dark cinema bars on widescreen films.',
+                        style: TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA)),
                       ),
                       value: screenSync.cropBlackBars,
                       onChanged: (val) => screenSync.setCropBlackBars(val),
@@ -216,11 +218,11 @@ class ScreenSyncTab extends StatelessWidget {
                       activeThumbColor: const Color(0xFFFBBF24),
                       title: const Text(
                         'Keep Dim Glow on Dark Scenes',
-                        style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 13),
+                        style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 11.5),
                       ),
                       subtitle: const Text(
-                        'Preserves a subtle warm ambient glow during dark/black scenes and DRM-protected media.',
-                        style: TextStyle(fontSize: 11.5, color: Color(0xFFA1A1AA)),
+                        'Preserves a subtle warm glow during dark media.',
+                        style: TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA)),
                       ),
                       value: screenSync.keepDimGlow,
                       onChanged: (val) => screenSync.setKeepDimGlow(val),
@@ -228,22 +230,22 @@ class ScreenSyncTab extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-              // 3. COLOR TUNING (SATURATION BOOST & SMOOTHING)
+              // 3. COLOR TUNING (COMPACT)
               GlowingCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.tune_rounded, size: 18, color: Color(0xFFA855F7)),
-                        SizedBox(width: 8),
+                        Icon(Icons.tune_rounded, size: 16, color: Color(0xFFA855F7)),
+                        SizedBox(width: 6),
                         Text(
                           'COLOR & TRANSITION TUNING',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.8,
                             color: Color(0xFFA1A1AA),
@@ -251,7 +253,7 @@ class ScreenSyncTab extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     // Saturation Boost Slider
                     Row(
@@ -259,11 +261,11 @@ class ScreenSyncTab extends StatelessWidget {
                       children: [
                         const Text(
                           'Saturation Boost',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         Text(
                           '${screenSync.saturationBoost.toStringAsFixed(1)}x',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFA855F7)),
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFA855F7)),
                         ),
                       ],
                     ),
@@ -272,7 +274,8 @@ class ScreenSyncTab extends StatelessWidget {
                         activeTrackColor: const Color(0xFFA855F7),
                         inactiveTrackColor: const Color(0xFF27272A),
                         thumbColor: const Color(0xFFA855F7),
-                        trackHeight: 4,
+                        trackHeight: 3,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                       ),
                       child: Slider(
                         value: screenSync.saturationBoost,
@@ -282,19 +285,19 @@ class ScreenSyncTab extends StatelessWidget {
                         onChanged: (val) => screenSync.setSaturationBoost(val),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
                     // Smoothing Slider
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Color Smoothing (Responsiveness vs Calm)',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                          'Color Smoothing',
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         Text(
                           '${(screenSync.smoothingAlpha * 100).toInt()}%',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF06B6D4)),
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF06B6D4)),
                         ),
                       ],
                     ),
@@ -303,7 +306,8 @@ class ScreenSyncTab extends StatelessWidget {
                         activeTrackColor: const Color(0xFF06B6D4),
                         inactiveTrackColor: const Color(0xFF27272A),
                         thumbColor: const Color(0xFF06B6D4),
-                        trackHeight: 4,
+                        trackHeight: 3,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                       ),
                       child: Slider(
                         value: screenSync.smoothingAlpha,
@@ -316,25 +320,25 @@ class ScreenSyncTab extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-              // 4. DRM & PERFORMANCE NOTE
+              // 4. DRM & PERFORMANCE NOTE (COMPACT)
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFF141417),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFF27272A)),
                 ),
                 child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFFBBF24)),
-                    SizedBox(width: 10),
+                    Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFFBBF24)),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Note on Protected Media (DRM): Hardware-protected streams (e.g. Netflix, Disney+ app) render as black surfaces in Windows capture. Games, desktop apps, YouTube, and video players (VLC, MPV) are fully captured.',
-                        style: TextStyle(fontSize: 11.5, color: Color(0xFFA1A1AA), height: 1.3),
+                        'Note: Protected media (Netflix app, Disney+ app) render black in Windows capture. Desktop apps, games, YouTube, and media players (VLC) are fully supported.',
+                        style: TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA), height: 1.3),
                       ),
                     ),
                   ],

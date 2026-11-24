@@ -12,24 +12,24 @@ class SystemTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. FLASH ALERT NOTIFICATION SIMULATOR
+          // 1. FLASH ALERT NOTIFICATION SIMULATOR (MINIMAL)
           GlowingCard(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.notifications_active_rounded, size: 18, color: Color(0xFF10B981)),
-                    SizedBox(width: 8),
+                    Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF10B981)),
+                    SizedBox(width: 6),
                     Text(
                       'NOTIFICATION FLASH ALERT SIMULATOR',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.8,
                         color: Color(0xFFA1A1AA),
@@ -37,15 +37,15 @@ class SystemTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 const Text(
-                  'Trigger a visual flash pulse on your LED strip. The comfort engine pulses 3 times and gracefully restores your previous color and power state.',
-                  style: TextStyle(fontSize: 12.5, color: Color(0xFF71717A)),
+                  'Trigger a visual flash pulse on your strip. The comfort engine pulses 3 times and restores previous state.',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF71717A)),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     _buildAlertButton(
                       context,
@@ -76,22 +76,22 @@ class SystemTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // 2. PREFERENCES & BEHAVIOR
+          // 2. PREFERENCES & BEHAVIOR (COMPACT)
           GlowingCard(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.tune_rounded, size: 18, color: Color(0xFF38BDF8)),
-                    SizedBox(width: 8),
+                    Icon(Icons.tune_rounded, size: 16, color: Color(0xFF38BDF8)),
+                    SizedBox(width: 6),
                     Text(
                       'PREFERENCES & BEHAVIOR',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.8,
                         color: Color(0xFFA1A1AA),
@@ -99,7 +99,7 @@ class SystemTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
 
                 // Auto-connect toggle
                 SwitchListTile(
@@ -107,11 +107,11 @@ class SystemTab extends StatelessWidget {
                   activeThumbColor: const Color(0xFF10B981),
                   title: const Text(
                     'Auto-connect on launch',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 12),
                   ),
                   subtitle: const Text(
-                    'Automatically initiates BLE scan and connects to FF:FF:10:C5:29:1F / ELK-BLEDOM upon startup.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFFA1A1AA)),
+                    'Automatically scans and connects to target ELK-BLEDOM upon startup.',
+                    style: TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA)),
                   ),
                   value: bleService.autoConnectOnLaunch,
                   onChanged: (val) => bleService.setAutoConnectOnLaunch(val),
@@ -124,11 +124,11 @@ class SystemTab extends StatelessWidget {
                   activeThumbColor: const Color(0xFFEF4444),
                   title: const Text(
                     'Turn lights OFF when app closes',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 12),
                   ),
                   subtitle: const Text(
-                    'Transmits 0x00 power standby packet before window destruction to avoid leaving strip lit.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFFA1A1AA)),
+                    'Transmits 0x00 power standby packet before window destruction.',
+                    style: TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA)),
                   ),
                   value: bleService.turnOffOnClose,
                   onChanged: (val) => bleService.setTurnOffOnClose(val),
@@ -141,11 +141,11 @@ class SystemTab extends StatelessWidget {
                   activeThumbColor: const Color(0xFF8B5CF6),
                   title: const Text(
                     'Show all Bluetooth devices in selector',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 12),
                   ),
                   subtitle: const Text(
-                    'When disabled, only known ELK-BLEDOM, duoCo, and LED strip peripherals are listed. Enable if your controller uses an unlisted manufacturer name.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFFA1A1AA)),
+                    'When disabled, only known ELK-BLEDOM / duoCo peripherals are listed.',
+                    style: TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA)),
                   ),
                   value: bleService.showAllDevices,
                   onChanged: (val) => bleService.setShowAllDevices(val),
@@ -158,11 +158,11 @@ class SystemTab extends StatelessWidget {
                   activeThumbColor: const Color(0xFF06B6D4),
                   title: const Text(
                     'Reduce Flashing (Comfort Safety Limiter)',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 12),
                   ),
                   subtitle: const Text(
-                    'Applies an exponential low-pass filter to clamp rapid color oscillation and minimize visual fatigue.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFFA1A1AA)),
+                    'Low-pass filter that clamps rapid color jumps to prevent eye fatigue.',
+                    style: TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA)),
                   ),
                   value: bleService.reduceFlashing,
                   onChanged: (val) => bleService.setReduceFlashing(val),
@@ -170,22 +170,22 @@ class SystemTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // 3. HARDWARE & BLE PROTOCOL SPECIFICATIONS
+          // 3. HARDWARE & BLE PROTOCOL SPECIFICATIONS (COMPACT)
           GlowingCard(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.memory_rounded, size: 18, color: Color(0xFFA855F7)),
-                    SizedBox(width: 8),
+                    Icon(Icons.memory_rounded, size: 16, color: Color(0xFFA855F7)),
+                    SizedBox(width: 6),
                     Text(
-                      'VERIFIED HARDWARE & GATT SPECIFICATIONS',
+                      'HARDWARE & GATT SPECIFICATIONS',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.8,
                         color: Color(0xFFA1A1AA),
@@ -193,30 +193,30 @@ class SystemTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
 
                 _buildSpecRow('Target Hardware MAC', ElkProtocol.targetDeviceAddress, isHighlight: true),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 _buildSpecRow('Primary Service UUID', bleService.activeServiceUuid),
-                const SizedBox(height: 8),
-                _buildSpecRow('Active Write Char UUID', '${bleService.activeCharUuid} (writeWithoutResponse)'),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
+                _buildSpecRow('Active Write Char UUID', '${bleService.activeCharUuid} (withoutResponse)'),
+                const SizedBox(height: 6),
                 _buildSpecRow('Init Handshake Packet', '7E 07 83 02 01 01 01 00 EF (300ms post-connect)'),
-                const SizedBox(height: 8),
-                _buildSpecRow('Rate Throttling Queue', '55ms (~18 Hz) Coalescing / Stale Frame Dropping'),
-                const SizedBox(height: 8),
-                _buildSpecRow('Comfort Engine', 'Smoothstep fade curve • RGB balance gains: ${bleService.colorBalance.redGain.toStringAsFixed(2)}R, ${bleService.colorBalance.greenGain.toStringAsFixed(2)}G, ${bleService.colorBalance.blueGain.toStringAsFixed(2)}B'),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
+                _buildSpecRow('Rate Throttling Queue', '55ms (~18 Hz) Coalescing Queue'),
+                const SizedBox(height: 6),
+                _buildSpecRow('Comfort Engine', 'Smoothstep fade • Gains: ${bleService.colorBalance.redGain.toStringAsFixed(2)}R, ${bleService.colorBalance.greenGain.toStringAsFixed(2)}G, ${bleService.colorBalance.blueGain.toStringAsFixed(2)}B'),
+                const SizedBox(height: 6),
                 _buildSpecRow('Packet Structure', '9-byte fixed width: 0x7E [LEN] [CMD] ... 0xEF'),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           // 4. LIVE BLE HEX PACKET LOG
           HexLogViewer(
             bleService: bleService,
-            height: 320,
+            height: 280,
           ),
         ],
       ),
@@ -234,13 +234,13 @@ class SystemTab extends StatelessWidget {
         backgroundColor: color.withValues(alpha: 0.12),
         foregroundColor: color,
         side: BorderSide(color: color.withValues(alpha: 0.4)),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
-      icon: Icon(icon, size: 16, color: color),
+      icon: Icon(icon, size: 14, color: color),
       label: Text(
         label,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
       ),
       onPressed: () {
         bleService.flashAlert(color);
@@ -257,10 +257,10 @@ class SystemTab extends StatelessWidget {
 
   Widget _buildSpecRow(String label, String value, {bool isHighlight = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFF141417),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: isHighlight ? const Color(0xFFA855F7).withValues(alpha: 0.4) : const Color(0xFF27272A),
         ),
@@ -268,10 +268,10 @@ class SystemTab extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 170,
+            width: 150,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 12, color: Color(0xFFA1A1AA), fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 11, color: Color(0xFFA1A1AA), fontWeight: FontWeight.w500),
             ),
           ),
           Expanded(
@@ -279,7 +279,7 @@ class SystemTab extends StatelessWidget {
               value,
               style: TextStyle(
                 fontFamily: 'monospace',
-                fontSize: 11.5,
+                fontSize: 10.5,
                 fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
                 color: isHighlight ? const Color(0xFFC4B5FD) : Colors.white70,
               ),

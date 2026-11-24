@@ -48,7 +48,7 @@ class _ToolsTabState extends State<ToolsTab> {
       listenable: Listenable.merge([api, obs]),
       builder: (context, _) {
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -56,7 +56,7 @@ class _ToolsTabState extends State<ToolsTab> {
               GlowingCard(
                 glowColor: const Color(0xFF10B981),
                 isGlowing: api.isEnabled,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -236,13 +236,13 @@ class _ToolsTabState extends State<ToolsTab> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
               // 3. OBS STUDIO TALLY & SCENE LINK
               GlowingCard(
                 glowColor: const Color(0xFFEF4444),
                 isGlowing: obs.isConnected,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -358,11 +358,11 @@ class _ToolsTabState extends State<ToolsTab> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
               // 4. GLOBAL WINDOWS HOTKEYS REFERENCE
               GlowingCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

@@ -70,34 +70,34 @@ class _LightTabState extends State<LightTab> {
     final isOnline = ble.status == BleLedStatus.connected;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. LIVE GLOWING PREVIEW & POWER CONTROLS
+          // 1. LIVE GLOWING PREVIEW & POWER CONTROLS (MINIMAL)
           GlowingCard(
             glowColor: currentColor,
             isGlowing: ble.isPoweredOn && isOnline,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
                 // Glowing circular bulb / preview
                 Container(
-                  width: 58,
-                  height: 58,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: ble.isPoweredOn ? currentColor : const Color(0xFF27272A),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.3),
-                      width: 2,
+                      width: 1.5,
                     ),
                     boxShadow: ble.isPoweredOn
                         ? [
                             BoxShadow(
                               color: currentColor.withValues(alpha: 0.65),
-                              blurRadius: 28,
-                              spreadRadius: 4,
+                              blurRadius: 16,
+                              spreadRadius: 2,
                             ),
                           ]
                         : [],
@@ -110,11 +110,11 @@ class _LightTabState extends State<LightTab> {
                               ? Colors.white
                               : Colors.black87)
                           : const Color(0xFF71717A),
-                      size: 28,
+                      size: 20,
                     ),
                   ),
                 ),
-                const SizedBox(width: 18),
+                const SizedBox(width: 12),
 
                 // Color Hex & Status
                 Expanded(
@@ -126,16 +126,16 @@ class _LightTabState extends State<LightTab> {
                           Text(
                             ble.isPoweredOn ? 'ACTIVE ILLUMINATION' : 'LIGHT STANDBY',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 9.5,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
+                              letterSpacing: 1.0,
                               color: ble.isPoweredOn ? const Color(0xFF10B981) : const Color(0xFF71717A),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           Container(
-                            width: 6,
-                            height: 6,
+                            width: 5,
+                            height: 5,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: ble.isPoweredOn ? const Color(0xFF10B981) : const Color(0xFF71717A),
@@ -143,28 +143,28 @@ class _LightTabState extends State<LightTab> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: const Color(0xFF27272A),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(4),
                               border: Border.all(color: const Color(0xFF3F3F46)),
                             ),
                             child: Text(
                               _hexTextController.text,
                               style: const TextStyle(
                                 fontFamily: 'monospace',
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.copy_rounded, size: 16),
+                            icon: const Icon(Icons.copy_rounded, size: 14),
                             tooltip: 'Copy HEX code',
                             color: const Color(0xFFA1A1AA),
                             visualDensity: VisualDensity.compact,
@@ -184,8 +184,9 @@ class _LightTabState extends State<LightTab> {
                   ),
                 ),
 
-                // Turn ON / Turn OFF Buttons
+                // Turn ON / Turn OFF Buttons (Compact)
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
@@ -196,14 +197,14 @@ class _LightTabState extends State<LightTab> {
                         side: BorderSide(
                           color: ble.isPoweredOn ? const Color(0xFF10B981) : const Color(0xFF3F3F46),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: const Icon(Icons.power_settings_new_rounded, size: 18),
-                      label: const Text('Turn ON', style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.power_settings_new_rounded, size: 15),
+                      label: const Text('ON', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                       onPressed: () => ble.powerOn(),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: !ble.isPoweredOn
@@ -213,11 +214,11 @@ class _LightTabState extends State<LightTab> {
                         side: BorderSide(
                           color: !ble.isPoweredOn ? const Color(0xFFEF4444) : const Color(0xFF3F3F46),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: const Icon(Icons.power_off_rounded, size: 18),
-                      label: const Text('Turn OFF', style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.power_off_rounded, size: 15),
+                      label: const Text('OFF', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                       onPressed: () => ble.powerOff(),
                     ),
                   ],
@@ -225,11 +226,11 @@ class _LightTabState extends State<LightTab> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // 2. HARDWARE BRIGHTNESS SLIDER
+          // 2. HARDWARE BRIGHTNESS SLIDER (COMPACT)
           GlowingCard(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -238,12 +239,12 @@ class _LightTabState extends State<LightTab> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.brightness_6_rounded, size: 18, color: Color(0xFFFBBF24)),
-                        SizedBox(width: 8),
+                        Icon(Icons.brightness_6_rounded, size: 15, color: Color(0xFFFBBF24)),
+                        SizedBox(width: 6),
                         Text(
                           'HARDWARE BRIGHTNESS',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.8,
                             color: Color(0xFFA1A1AA),
@@ -252,15 +253,15 @@ class _LightTabState extends State<LightTab> {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1.5),
                       decoration: BoxDecoration(
                         color: const Color(0xFF27272A),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${ble.currentBrightness}%',
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFFBBF24),
                         ),
@@ -268,10 +269,10 @@ class _LightTabState extends State<LightTab> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.brightness_low_rounded, size: 18, color: Color(0xFF71717A)),
+                    const Icon(Icons.brightness_low_rounded, size: 15, color: Color(0xFF71717A)),
                     Expanded(
                       child: SliderTheme(
                         data: SliderTheme.of(context).copyWith(
@@ -279,8 +280,8 @@ class _LightTabState extends State<LightTab> {
                           inactiveTrackColor: const Color(0xFF27272A),
                           thumbColor: const Color(0xFFFBBF24),
                           overlayColor: const Color(0xFFFBBF24).withValues(alpha: 0.2),
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-                          trackHeight: 5,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                          trackHeight: 3,
                         ),
                         child: Slider(
                           value: ble.currentBrightness.toDouble(),
@@ -292,17 +293,17 @@ class _LightTabState extends State<LightTab> {
                         ),
                       ),
                     ),
-                    const Icon(Icons.brightness_high_rounded, size: 20, color: Color(0xFFFBBF24)),
+                    const Icon(Icons.brightness_high_rounded, size: 16, color: Color(0xFFFBBF24)),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // 3. USER CUSTOM NAMED SCENES (RGBZap Core Feature)
+          // 3. USER CUSTOM NAMED SCENES (COMPACT)
           GlowingCard(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -311,12 +312,12 @@ class _LightTabState extends State<LightTab> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.movie_filter_rounded, size: 18, color: Color(0xFF38BDF8)),
-                        SizedBox(width: 8),
+                        Icon(Icons.movie_filter_rounded, size: 16, color: Color(0xFF38BDF8)),
+                        SizedBox(width: 6),
                         Text(
                           'CUSTOM NAMED SCENES',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.8,
                             color: Color(0xFFA1A1AA),
@@ -328,64 +329,65 @@ class _LightTabState extends State<LightTab> {
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFF38BDF8),
                         visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       ),
-                      icon: const Icon(Icons.bookmark_add_rounded, size: 16),
-                      label: const Text('Save Current as Scene', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.bookmark_add_rounded, size: 14),
+                      label: const Text('Save Current', style: TextStyle(fontSize: 11)),
                       onPressed: () => _showSaveSceneDialog(context, ble),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 // Scenes Grid
                 if (ble.userScenes.isEmpty)
-                  const Text('No custom scenes saved yet.', style: TextStyle(fontSize: 12, color: Color(0xFF71717A)))
+                  const Text('No custom scenes saved yet.', style: TextStyle(fontSize: 11, color: Color(0xFF71717A)))
                 else
                   Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: ble.userScenes.map((scene) {
                       return InkWell(
                         onTap: () => ble.applyUserScene(scene),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                           decoration: BoxDecoration(
                             color: const Color(0xFF27272A),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: scene.color.withValues(alpha: 0.6)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                width: 12,
-                                height: 12,
+                                width: 9,
+                                height: 9,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: scene.color,
                                   boxShadow: [
                                     BoxShadow(
                                       color: scene.color.withValues(alpha: 0.8),
-                                      blurRadius: 6,
+                                      blurRadius: 5,
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 6),
                               Text(
                                 scene.name,
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               Text(
                                 '${scene.brightness}%',
-                                style: const TextStyle(fontSize: 10, color: Color(0xFFA1A1AA)),
+                                style: const TextStyle(fontSize: 9.5, color: Color(0xFFA1A1AA)),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               InkWell(
                                 onTap: () => ble.deleteUserScene(scene.id),
-                                child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF71717A)),
+                                child: const Icon(Icons.close_rounded, size: 12, color: Color(0xFF71717A)),
                               ),
                             ],
                           ),
@@ -396,11 +398,11 @@ class _LightTabState extends State<LightTab> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // 4. INTERACTIVE CHROMATIC WHEEL CARD
+          // 4. INTERACTIVE CHROMATIC WHEEL CARD (MINIMAL, ZERO OVERFLOW)
           GlowingCard(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               children: [
                 Row(
@@ -408,12 +410,12 @@ class _LightTabState extends State<LightTab> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.palette_rounded, size: 18, color: Color(0xFF38BDF8)),
-                        SizedBox(width: 8),
+                        Icon(Icons.palette_rounded, size: 16, color: Color(0xFF38BDF8)),
+                        SizedBox(width: 6),
                         Text(
                           'INTERACTIVE CHROMATIC WHEEL',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.8,
                             color: Color(0xFFA1A1AA),
@@ -426,52 +428,57 @@ class _LightTabState extends State<LightTab> {
                         foregroundColor: const Color(0xFFA1A1AA),
                         side: const BorderSide(color: Color(0xFF3F3F46)),
                         visualDensity: VisualDensity.compact,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                       ),
-                      icon: const Icon(Icons.edit_rounded, size: 14),
-                      label: const Text('Edit HEX', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.edit_rounded, size: 13),
+                      label: const Text('Edit HEX', style: TextStyle(fontSize: 11)),
                       onPressed: () => _showHexEditDialog(context, ble),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 380),
-                    child: ColorPicker(
-                      pickerColor: currentColor,
-                      onColorChanged: (newColor) {
-                        ble.sendRgb(newColor);
-                      },
-                      paletteType: PaletteType.hueWheel,
-                      enableAlpha: false,
-                      displayThumbColor: true,
-                      hexInputBar: false,
-                      colorPickerWidth: 320,
-                      pickerAreaHeightPercent: 0.85,
-                      labelTypes: const [],
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: SizedBox(
+                      width: 280,
+                      child: ColorPicker(
+                        pickerColor: currentColor,
+                        onColorChanged: (newColor) {
+                          ble.sendRgb(newColor);
+                        },
+                        portraitOnly: true,
+                        paletteType: PaletteType.hueWheel,
+                        enableAlpha: false,
+                        displayThumbColor: true,
+                        hexInputBar: false,
+                        colorPickerWidth: 260,
+                        pickerAreaHeightPercent: 0.82,
+                        labelTypes: const [],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           // 5. COMFORT ENGINE (SMOOTH FADING & COLOR BALANCE)
           GlowingCard(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.spa_rounded, size: 18, color: Color(0xFF10B981)),
-                    SizedBox(width: 8),
+                    Icon(Icons.spa_rounded, size: 16, color: Color(0xFF10B981)),
+                    SizedBox(width: 6),
                     Text(
-                      'COMFORT ENGINE (SMOOTH FADING & COLOR BALANCE)',
+                      'COMFORT ENGINE (SMOOTH FADING & BALANCE)',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.8,
                         color: Color(0xFFA1A1AA),
@@ -479,47 +486,45 @@ class _LightTabState extends State<LightTab> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
 
                 // Smooth Fades Selector
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const SizedBox(
-                      width: 140,
-                      child: Text('Color Transition Fade:', style: TextStyle(fontSize: 12, color: Colors.white)),
-                    ),
-                    Wrap(
-                      spacing: 8,
-                      children: FadeSpeed.values.map((fs) {
-                        final isSel = ble.fadeSpeed == fs;
-                        return ChoiceChip(
-                          label: Text(fs.label),
-                          selected: isSel,
-                          selectedColor: const Color(0xFF10B981),
-                          backgroundColor: const Color(0xFF27272A),
-                          labelStyle: TextStyle(
-                            fontSize: 11,
-                            color: isSel ? Colors.white : const Color(0xFFA1A1AA),
-                            fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                          ),
-                          onSelected: (val) {
-                            if (val) ble.setFadeSpeed(fs);
-                          },
-                        );
-                      }).toList(),
-                    ),
+                    const Text('Fade Speed:', style: TextStyle(fontSize: 11, color: Colors.white)),
+                    ...FadeSpeed.values.map((fs) {
+                      final isSel = ble.fadeSpeed == fs;
+                      return ChoiceChip(
+                        label: Text(fs.label),
+                        selected: isSel,
+                        selectedColor: const Color(0xFF10B981),
+                        backgroundColor: const Color(0xFF27272A),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        labelStyle: TextStyle(
+                          fontSize: 10.5,
+                          color: isSel ? Colors.white : const Color(0xFFA1A1AA),
+                          fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        onSelected: (val) {
+                          if (val) ble.setFadeSpeed(fs);
+                        },
+                      );
+                    }),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 const Divider(color: Color(0xFF27272A)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
                 // Color Balance calibration
                 const Text(
-                  'White Balance / Channel Gain Calibration (Fixes bluish/pinkish LED tints)',
-                  style: TextStyle(fontSize: 11.5, color: Color(0xFFA1A1AA)),
+                  'White Balance / Channel Gain Calibration',
+                  style: TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA)),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 _buildGainSlider('Red Gain', ble.colorBalance.redGain, const Color(0xFFEF4444), (v) {
                   ble.setColorBalance(ble.colorBalance.copyWith(redGain: v));
                 }),
@@ -532,22 +537,22 @@ class _LightTabState extends State<LightTab> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           // 6. QUICK PRESETS & CUSTOM SWATCHES CARD
           GlowingCard(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFFA855F7)),
-                    SizedBox(width: 8),
+                    Icon(Icons.auto_awesome_rounded, size: 15, color: Color(0xFFA855F7)),
+                    SizedBox(width: 6),
                     Text(
                       'STANDARD PRESETS',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.8,
                         color: Color(0xFFA1A1AA),
@@ -555,10 +560,10 @@ class _LightTabState extends State<LightTab> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: _standardPresets.map((color) {
                     final isSelected = currentColor.toARGB32() == color.toARGB32();
                     return _buildSwatchTile(
@@ -569,9 +574,9 @@ class _LightTabState extends State<LightTab> {
                   }).toList(),
                 ),
 
-                const SizedBox(height: 20),
-                const Divider(color: Color(0xFF27272A)),
                 const SizedBox(height: 12),
+                const Divider(color: Color(0xFF27272A)),
+                const SizedBox(height: 8),
 
                 // User Saved Swatches
                 Row(
@@ -579,12 +584,12 @@ class _LightTabState extends State<LightTab> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.bookmark_rounded, size: 16, color: Color(0xFFEC4899)),
-                        SizedBox(width: 8),
+                        Icon(Icons.bookmark_rounded, size: 15, color: Color(0xFFEC4899)),
+                        SizedBox(width: 6),
                         Text(
                           'SAVED CUSTOM SWATCHES',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.8,
                             color: Color(0xFFA1A1AA),
@@ -596,9 +601,10 @@ class _LightTabState extends State<LightTab> {
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFFEC4899),
                         visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       ),
-                      icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('Save Current Color', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.add_rounded, size: 14),
+                      label: const Text('Save Current', style: TextStyle(fontSize: 10.5)),
                       onPressed: () {
                         ble.saveCustomSwatch(currentColor);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -611,20 +617,20 @@ class _LightTabState extends State<LightTab> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 if (ble.customSwatches.isEmpty)
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
+                    padding: EdgeInsets.symmetric(vertical: 4),
                     child: Text(
-                      'No custom swatches saved. Click "Save Current Color" to store your favorite tones.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF71717A)),
+                      'No custom swatches saved.',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF71717A)),
                     ),
                   )
                 else
                   Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: ble.customSwatches.map((color) {
                       final isSelected = currentColor.toARGB32() == color.toARGB32();
                       return _buildSwatchTile(
@@ -687,23 +693,23 @@ class _LightTabState extends State<LightTab> {
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(7),
         child: Container(
-          width: 38,
-          height: 38,
+          width: 28,
+          height: 28,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(7),
             border: Border.all(
               color: isSelected ? Colors.white : Colors.black.withValues(alpha: 0.4),
-              width: isSelected ? 2.5 : 1,
+              width: isSelected ? 2.0 : 1,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
                       color: color.withValues(alpha: 0.8),
-                      blurRadius: 12,
-                      spreadRadius: 2,
+                      blurRadius: 8,
+                      spreadRadius: 1,
                     ),
                   ]
                 : [],
@@ -711,7 +717,7 @@ class _LightTabState extends State<LightTab> {
           child: isSelected
               ? Icon(
                   Icons.check_rounded,
-                  size: 20,
+                  size: 15,
                   color: ThemeData.estimateBrightnessForColor(color) == Brightness.dark
                       ? Colors.white
                       : Colors.black,

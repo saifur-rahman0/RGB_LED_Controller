@@ -16,30 +16,30 @@ class AudioReactiveTab extends StatelessWidget {
         final renderedColor = audioService.renderedColor;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. MASTER AUDIO CONTROLLER BANNER
+              // 1. MASTER AUDIO CONTROLLER BANNER (MINIMAL)
               GlowingCard(
                 glowColor: renderedColor,
                 isGlowing: isRunning,
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Row(
                   children: [
                     Container(
-                      width: 54,
-                      height: 54,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isRunning ? renderedColor : const Color(0xFF27272A),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
                         boxShadow: isRunning
                             ? [
                                 BoxShadow(
                                   color: renderedColor.withValues(alpha: 0.65),
-                                  blurRadius: 24,
-                                  spreadRadius: 3,
+                                  blurRadius: 14,
+                                  spreadRadius: 1,
                                 ),
                               ]
                             : [],
@@ -52,11 +52,11 @@ class AudioReactiveTab extends StatelessWidget {
                                   ? Colors.white
                                   : Colors.black)
                               : const Color(0xFF71717A),
-                          size: 26,
+                          size: 18,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,11 +64,11 @@ class AudioReactiveTab extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                isRunning ? 'AUDIO REACTIVE VISUALIZER ACTIVE' : 'AUDIO VISUALIZER STANDBY',
+                                isRunning ? 'AUDIO VISUALIZER ACTIVE' : 'AUDIO VISUALIZER STANDBY',
                                 style: TextStyle(
-                                  fontSize: 10.5,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.0,
+                                  letterSpacing: 0.8,
                                   color: isRunning ? const Color(0xFF10B981) : const Color(0xFF71717A),
                                 ),
                               ),
@@ -83,17 +83,19 @@ class AudioReactiveTab extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 1),
                           Text(
                             isRunning
-                                ? 'Mode: ${audioService.mode.label} • Dynamic Auto-Gain Active'
+                                ? 'Mode: ${audioService.mode.label} • Auto-Gain Dynamic'
                                 : 'Pulse and animate lights in sync with music and game audio',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFFA1A1AA)),
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFFA1A1AA)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isRunning
@@ -103,24 +105,24 @@ class AudioReactiveTab extends StatelessWidget {
                         side: BorderSide(
                           color: isRunning ? const Color(0xFFEF4444) : const Color(0xFF10B981),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: Icon(isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded, size: 20),
+                      icon: Icon(isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded, size: 16),
                       label: Text(
-                        isRunning ? 'Stop Visualizer' : 'Start Visualizer',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        isRunning ? 'Stop' : 'Start',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       onPressed: () => audioService.toggle(),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-              // 2. LIVE EQUALIZER & VU LEVEL TELEMETRY
+              // 2. LIVE SPECTRUM TELEMETRY (COMPACT)
               GlowingCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -129,12 +131,12 @@ class AudioReactiveTab extends StatelessWidget {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.equalizer_rounded, size: 18, color: Color(0xFF06B6D4)),
-                            SizedBox(width: 8),
+                            Icon(Icons.equalizer_rounded, size: 16, color: Color(0xFF06B6D4)),
+                            SizedBox(width: 6),
                             Text(
-                              'REAL-TIME SPECTRUM TELEMETRY',
+                              'SPECTRUM TELEMETRY',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.8,
                                 color: Color(0xFFA1A1AA),
@@ -144,28 +146,29 @@ class AudioReactiveTab extends StatelessWidget {
                         ),
                         // Beat Indicator Badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: audioService.isBeat
                                 ? const Color(0xFFEF4444).withValues(alpha: 0.3)
                                 : const Color(0xFF27272A),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                             border: Border.all(
                               color: audioService.isBeat ? const Color(0xFFEF4444) : const Color(0xFF3F3F46),
                             ),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.flash_on_rounded,
-                                size: 12,
+                                size: 11,
                                 color: audioService.isBeat ? const Color(0xFFEF4444) : const Color(0xFF71717A),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 3),
                               Text(
-                                audioService.isBeat ? 'DRUM BEAT PEAK' : 'RHYTHM IDLE',
+                                audioService.isBeat ? 'BEAT' : 'IDLE',
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.bold,
                                   color: audioService.isBeat ? const Color(0xFFF87171) : const Color(0xFF71717A),
                                 ),
@@ -175,97 +178,130 @@ class AudioReactiveTab extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
-                    // 3 Band Level Meters (Bass, Mid, High)
+                    // 4 Band Level Meters
                     _buildBandMeter('BASS (20-250Hz)', audioService.bassLevel, const Color(0xFFEF4444)),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     _buildBandMeter('MIDS (250-2000Hz)', audioService.midLevel, const Color(0xFF10B981)),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     _buildBandMeter('TREBLE (2-8kHz)', audioService.highLevel, const Color(0xFF38BDF8)),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     _buildBandMeter('OVERALL LOUDNESS', audioService.overallLevel, const Color(0xFFA855F7)),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-              // 3. REACTIVE MODE SELECTOR CARDS
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 2.2,
-                children: AudioReactiveMode.values.map((mode) {
-                  final isSelected = audioService.mode == mode;
-                  return GlowingCard(
-                    glowColor: const Color(0xFF06B6D4),
-                    isGlowing: isSelected,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    onTap: () => audioService.setMode(mode),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF06B6D4).withValues(alpha: 0.25)
-                                : const Color(0xFF27272A),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            mode.icon,
-                            size: 22,
-                            color: isSelected ? const Color(0xFF06B6D4) : const Color(0xFFA1A1AA),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                mode.label,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected ? Colors.white : const Color(0xFFE4E4E7),
+              // 3. REACTIVE MODE SELECTOR CARDS (SMALL MINIMAL CARDS)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount = constraints.maxWidth > 850
+                      ? 3
+                      : constraints.maxWidth > 550
+                          ? 2
+                          : 1;
+                  final childAspectRatio = constraints.maxWidth > 850 ? 3.5 : 2.9;
+
+                  return GridView.count(
+                    crossAxisCount: crossAxisCount,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: childAspectRatio,
+                    children: AudioReactiveMode.values.map((mode) {
+                      final isSelected = audioService.mode == mode;
+
+                      return GlowingCard(
+                        glowColor: const Color(0xFF06B6D4),
+                        isGlowing: isSelected,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        onTap: () => audioService.setMode(mode),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFF06B6D4).withValues(alpha: 0.25)
+                                    : const Color(0xFF27272A),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                mode.icon,
+                                size: 16,
+                                color: isSelected ? const Color(0xFF06B6D4) : const Color(0xFFA1A1AA),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    mode.label,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected ? Colors.white : const Color(0xFFE4E4E7),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    mode.description,
+                                    style: const TextStyle(fontSize: 9.5, color: Color(0xFF8E8E93), height: 1.2),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isSelected) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color(0xFF06B6D4),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0xFF06B6D4),
+                                      blurRadius: 6,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                mode.description,
-                                style: const TextStyle(fontSize: 10.5, color: Color(0xFFA1A1AA), height: 1.2),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
                             ],
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    }).toList(),
                   );
-                }).toList(),
+                },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-              // 4. TUNING SLIDERS (SENSITIVITY, SMOOTHING, FLOOR)
+              // 4. TUNING SLIDERS (COMPACT)
               GlowingCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.tune_rounded, size: 18, color: Color(0xFFFBBF24)),
-                        SizedBox(width: 8),
+                        Icon(Icons.tune_rounded, size: 16, color: Color(0xFFFBBF24)),
+                        SizedBox(width: 6),
                         Text(
-                          'DYNAMIC GAIN & RESPONSE CONTROLS',
+                          'GAIN & RESPONSE CONTROLS',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.8,
                             color: Color(0xFFA1A1AA),
@@ -273,95 +309,44 @@ class AudioReactiveTab extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     // Sensitivity Slider
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Microphone / Loopback Sensitivity',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                        Text(
-                          '${audioService.sensitivity.toInt()}%',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFFBBF24)),
-                        ),
-                      ],
+                    _buildSliderRow(
+                      context,
+                      label: 'Microphone Sensitivity',
+                      value: '${audioService.sensitivity.toInt()}%',
+                      current: audioService.sensitivity,
+                      min: 1.0,
+                      max: 100.0,
+                      activeColor: const Color(0xFFFBBF24),
+                      onChanged: (v) => audioService.setSensitivity(v),
                     ),
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: const Color(0xFFFBBF24),
-                        inactiveTrackColor: const Color(0xFF27272A),
-                        thumbColor: const Color(0xFFFBBF24),
-                        trackHeight: 4,
-                      ),
-                      child: Slider(
-                        value: audioService.sensitivity,
-                        min: 1.0,
-                        max: 100.0,
-                        onChanged: (val) => audioService.setSensitivity(val),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
                     // Smoothing Slider
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Release Smoothing (Snappy vs Calm)',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                        Text(
-                          '${audioService.smoothing.toInt()}%',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF06B6D4)),
-                        ),
-                      ],
+                    _buildSliderRow(
+                      context,
+                      label: 'Release Smoothing',
+                      value: '${audioService.smoothing.toInt()}%',
+                      current: audioService.smoothing,
+                      min: 0.0,
+                      max: 100.0,
+                      activeColor: const Color(0xFF06B6D4),
+                      onChanged: (v) => audioService.setSmoothing(v),
                     ),
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: const Color(0xFF06B6D4),
-                        inactiveTrackColor: const Color(0xFF27272A),
-                        thumbColor: const Color(0xFF06B6D4),
-                        trackHeight: 4,
-                      ),
-                      child: Slider(
-                        value: audioService.smoothing,
-                        min: 0.0,
-                        max: 100.0,
-                        onChanged: (val) => audioService.setSmoothing(val),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
                     // Minimum Glow Floor Slider
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Silence Ambient Floor Glow',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                        Text(
-                          '${audioService.minGlowFloor.toInt()}%',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
-                        ),
-                      ],
-                    ),
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: const Color(0xFF10B981),
-                        inactiveTrackColor: const Color(0xFF27272A),
-                        thumbColor: const Color(0xFF10B981),
-                        trackHeight: 4,
-                      ),
-                      child: Slider(
-                        value: audioService.minGlowFloor,
-                        min: 0.0,
-                        max: 30.0,
-                        onChanged: (val) => audioService.setMinGlowFloor(val),
-                      ),
+                    _buildSliderRow(
+                      context,
+                      label: 'Silence Floor Glow',
+                      value: '${audioService.minGlowFloor.toInt()}%',
+                      current: audioService.minGlowFloor,
+                      min: 0.0,
+                      max: 30.0,
+                      activeColor: const Color(0xFF10B981),
+                      onChanged: (v) => audioService.setMinGlowFloor(v),
                     ),
                   ],
                 ),
@@ -373,25 +358,78 @@ class AudioReactiveTab extends StatelessWidget {
     );
   }
 
-  Widget _buildBandMeter(String label, double value, Color color) {
+  Widget _buildSliderRow(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required double current,
+    required double min,
+    required double max,
+    required Color activeColor,
+    required ValueChanged<double> onChanged,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: Color(0xFF71717A))),
-            Text('${(value * 100).toInt()}%', style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: color)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.white),
+            ),
+            Text(
+              value,
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: activeColor),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: activeColor,
+            inactiveTrackColor: const Color(0xFF27272A),
+            thumbColor: activeColor,
+            trackHeight: 3,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+          ),
+          child: Slider(
+            value: current,
+            min: min,
+            max: max,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBandMeter(String label, double level, Color color) {
+    final clamped = level.clamp(0.0, 1.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: Color(0xFFA1A1AA), fontWeight: FontWeight.w500),
+            ),
+            Text(
+              '${(clamped * 100).toInt()}%',
+              style: TextStyle(fontFamily: 'monospace', fontSize: 10, fontWeight: FontWeight.bold, color: color),
+            ),
           ],
         ),
         const SizedBox(height: 3),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(2),
           child: LinearProgressIndicator(
-            value: value.clamp(0.0, 1.0),
+            value: clamped,
+            minHeight: 4,
             backgroundColor: const Color(0xFF27272A),
             valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 6,
           ),
         ),
       ],

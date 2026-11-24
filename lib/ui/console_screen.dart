@@ -227,30 +227,36 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'RGBZap LED Console',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.4,
-                            color: Colors.white,
+                    Flexible(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'RGBZap LED Console',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.4,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        Text(
-                          'ELK-BLEDOM • FF:FF:10:C5:29:1F',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 9.5,
-                            color: Colors.white.withValues(alpha: 0.45),
+                          Text(
+                            'ELK-BLEDOM • FF:FF:10:C5:29:1F',
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 9.5,
+                              color: Colors.white.withValues(alpha: 0.45),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 10),
 
                     // Live Status Pill
                     _buildStatusPill(ble.status),
@@ -769,11 +775,16 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                           color: isTarget ? const Color(0xFFFBBF24) : const Color(0xFF38BDF8),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          device.name != null && device.name!.isNotEmpty ? device.name! : 'Unknown Device',
-                          style: TextStyle(
-                            fontWeight: isTarget ? FontWeight.bold : FontWeight.normal,
-                            color: isTarget ? const Color(0xFFFBBF24) : Colors.white,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 120),
+                          child: Text(
+                            device.name != null && device.name!.isNotEmpty ? device.name! : 'Unknown Device',
+                            style: TextStyle(
+                              fontWeight: isTarget ? FontWeight.bold : FontWeight.normal,
+                              color: isTarget ? const Color(0xFFFBBF24) : Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                         const SizedBox(width: 6),

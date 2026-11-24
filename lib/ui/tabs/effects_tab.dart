@@ -30,30 +30,30 @@ class _EffectsTabState extends State<EffectsTab> {
     final activeScene = ble.activeScene;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. ACTIVE EFFECT CONTROLLER BANNER
+          // 1. ACTIVE EFFECT CONTROLLER BANNER (MINIMAL)
           GlowingCard(
             glowColor: const Color(0xFF8B5CF6),
             isGlowing: ble.isPoweredOn && (activeScene != ActiveScene.none || ble.currentEffectMode != 0),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.5)),
                   ),
                   child: const Center(
-                    child: Icon(Icons.auto_awesome_rounded, color: Color(0xFFA78BFA), size: 24),
+                    child: Icon(Icons.auto_awesome_rounded, color: Color(0xFFA78BFA), size: 18),
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,35 +61,37 @@ class _EffectsTabState extends State<EffectsTab> {
                       Row(
                         children: [
                           const Text(
-                            'LIGHTING ENGINE STATUS',
+                            'LIGHTING ENGINE',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 9.5,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.8,
                               color: Color(0xFFA78BFA),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           if (ble.reduceFlashing)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF10B981).withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
-                                'FLASH LIMITER ACTIVE',
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                                'FLASH LIMITER',
+                                style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                               ),
                             ),
                         ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1),
                       Text(
                         activeScene != ActiveScene.none
                             ? 'Playing: ${activeScene.name.toUpperCase()}'
                             : 'Hardware: ${ElkEffectCatalog.getById(ble.currentEffectMode).name}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -100,21 +102,21 @@ class _EffectsTabState extends State<EffectsTab> {
                       backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.2),
                       foregroundColor: const Color(0xFFF87171),
                       side: const BorderSide(color: Color(0xFFEF4444)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     ),
-                    icon: const Icon(Icons.stop_rounded, size: 16),
-                    label: const Text('Stop', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    icon: const Icon(Icons.stop_rounded, size: 14),
+                    label: const Text('Stop', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                     onPressed: () => ble.stopScene(),
                   ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // 2. SPEED SLIDER & REDUCE FLASHING SWITCH
+          // 2. SPEED SLIDER & REDUCE FLASHING SWITCH (COMPACT)
           GlowingCard(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
               children: [
                 // Speed Slider
@@ -127,11 +129,11 @@ class _EffectsTabState extends State<EffectsTab> {
                         children: [
                           const Text(
                             'EFFECT SPEED',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFA1A1AA)),
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFA1A1AA)),
                           ),
                           Text(
                             '${ble.currentEffectSpeed}%',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF06B6D4)),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF06B6D4)),
                           ),
                         ],
                       ),
@@ -140,8 +142,8 @@ class _EffectsTabState extends State<EffectsTab> {
                           activeTrackColor: const Color(0xFF06B6D4),
                           inactiveTrackColor: const Color(0xFF27272A),
                           thumbColor: const Color(0xFF06B6D4),
-                          trackHeight: 4,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                         ),
                         child: Slider(
                           value: ble.currentEffectSpeed.toDouble(),
@@ -153,15 +155,15 @@ class _EffectsTabState extends State<EffectsTab> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: 18),
 
                 // Reduce Flashing Switch
                 Container(
-                  height: 48,
+                  height: 36,
                   width: 1,
                   color: const Color(0xFF27272A),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -169,26 +171,30 @@ class _EffectsTabState extends State<EffectsTab> {
                       children: [
                         const Text(
                           'Reduce Flashing',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         const SizedBox(width: 4),
                         Tooltip(
                           message: 'Limits rapid light flashes and harsh strobes for visual comfort and accessibility.',
-                          child: Icon(Icons.info_outline_rounded, size: 14, color: Colors.white.withValues(alpha: 0.5)),
+                          child: Icon(Icons.info_outline_rounded, size: 13, color: Colors.white.withValues(alpha: 0.5)),
                         ),
                       ],
                     ),
-                    Switch(
-                      value: ble.reduceFlashing,
-                      activeThumbColor: const Color(0xFF10B981),
-                      onChanged: (v) => ble.setReduceFlashing(v),
+                    Transform.scale(
+                      scale: 0.85,
+                      alignment: Alignment.centerLeft,
+                      child: Switch(
+                        value: ble.reduceFlashing,
+                        activeThumbColor: const Color(0xFF10B981),
+                        onChanged: (v) => ble.setReduceFlashing(v),
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // 3. SECTION SELECTOR TABS
           SingleChildScrollView(
@@ -197,7 +203,7 @@ class _EffectsTabState extends State<EffectsTab> {
               children: _sections.map((section) {
                 final isSelected = _selectedSection == section;
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
                     label: Text(section),
                     selected: isSelected,
@@ -209,8 +215,9 @@ class _EffectsTabState extends State<EffectsTab> {
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : const Color(0xFFA1A1AA),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     onSelected: (val) {
                       if (val) setState(() => _selectedSection = section);
                     },
@@ -219,7 +226,7 @@ class _EffectsTabState extends State<EffectsTab> {
               }).toList(),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // 4. ANIMATED EFFECT TILES GRID
           _buildEffectTilesGrid(ble),
@@ -473,14 +480,19 @@ class _EffectsTabState extends State<EffectsTab> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 800 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth > 950
+            ? 3
+            : constraints.maxWidth > 620
+                ? 2
+                : 1;
+        final childAspectRatio = constraints.maxWidth > 950 ? 3.6 : 3.0;
         return GridView.count(
           crossAxisCount: crossAxisCount,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 14,
-          mainAxisSpacing: 14,
-          childAspectRatio: 1.4,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: childAspectRatio,
           children: tiles,
         );
       },
