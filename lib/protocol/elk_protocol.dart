@@ -15,6 +15,39 @@ class ElkProtocol {
   static const String targetDeviceAddress = 'FF:FF:10:C5:29:1F';
   static const String targetDeviceNamePrefix = 'ELK-BLEDOM';
 
+  // Common strip naming prefixes encountered across clone hardware
+  static const List<String> knownDevicePrefixes = [
+    'ELK-BLEDOM',
+    'ELK-BULB',
+    'ELK-',
+    'MELK',
+    'duoCo',
+    'Lotus',
+    'LED',
+    'XSL-',
+    'Triones',
+    'BT-LED',
+    'BleStrip',
+  ];
+
+  // Common candidate GATT Services across duoCo / ELK / Nordic clones
+  static const List<String> candidateServiceUuids = [
+    '0000fff0-0000-1000-8000-00805f9b34fb',
+    'fff0',
+    '0000ffe0-0000-1000-8000-00805f9b34fb',
+    'ffe0',
+    '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+  ];
+
+  // Common candidate GATT Write Characteristics across duoCo / ELK / Nordic clones
+  static const List<String> candidateWriteCharUuids = [
+    '0000fff3-0000-1000-8000-00805f9b34fb',
+    'fff3',
+    '0000ffe1-0000-1000-8000-00805f9b34fb',
+    'ffe1',
+    '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
+  ];
+
   /// Packet header and terminator
   static const int headerByte = 0x7E;
   static const int endByte = 0xEF;
@@ -90,16 +123,43 @@ class ElkProtocol {
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
   }
 
-  /// Matching helper to check if a UUID is the ELK-BLEDOM service
+  /// Matching helper to check if a UUID is a known compatible RGB LED service
   static bool isServiceMatch(String uuid) {
     final clean = uuid.toLowerCase().replaceAll('-', '');
-    return clean == '0000fff000001000800000805f9b34fb' || clean == 'fff0';
+    for (final candidate in candidateServiceUuids) {
+      if (clean == candidate.toLowerCase().replaceAll('-', '')) {
+        return true;
+      }
+    }
+    return clean.contains('fff0') || clean.contains('ffe0');
   }
 
-  /// Matching helper to check if a UUID is the ELK-BLEDOM write characteristic
+  /// Matching helper to check if a UUID is a known compatible write characteristic
   static bool isWriteCharMatch(String uuid) {
     final clean = uuid.toLowerCase().replaceAll('-', '');
-    return clean == '0000fff300001000800000805f9b34fb' || clean == 'fff3';
+    for (final candidate in candidateWriteCharUuids) {
+      if (clean == candidate.toLowerCase().replaceAll('-', '')) {
+        return true;
+      }
+    }
+    return clean.contains('fff3') || clean.contains('ffe1') || clean.contains('6e400002');
+  }
+
+  /// Checks if a device is recognized as a compatible strip by address or name
+  static bool isKnownStripDevice(String? name, String address) {
+    if (address.toUpperCase() == targetDeviceAddress) {
+      return true;
+    }
+    if (name == null || name.trim().isEmpty) {
+      return false;
+    }
+    final upperName = name.toUpperCase();
+    for (final prefix in knownDevicePrefixes) {
+      if (upperName.contains(prefix.toUpperCase())) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 
