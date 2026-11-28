@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
@@ -13,6 +14,7 @@ import 'tabs/light_tab.dart';
 import 'tabs/screen_sync_tab.dart';
 import 'tabs/system_tab.dart';
 import 'tabs/tools_tab.dart';
+import 'theme/glass_theme.dart';
 
 class ConsoleScreen extends StatefulWidget {
   const ConsoleScreen({super.key});
@@ -97,9 +99,8 @@ class _ConsoleScreenState extends State<ConsoleScreen>
     final api = Provider.of<LocalApiService>(context);
     final obs = Provider.of<ObsService>(context);
 
-    final accentGlow = ble.isPoweredOn && ble.status == BleLedStatus.connected
-        ? ble.currentColor
-        : const Color(0xFF6366F1); // Indigo fallback
+    final isLive = ble.isPoweredOn && ble.status == BleLedStatus.connected;
+    final accentGlow = isLive ? ble.currentColor : GlassColors.indigo;
 
     final tabPages = [
       LightTab(bleService: ble),
@@ -111,201 +112,339 @@ class _ConsoleScreenState extends State<ConsoleScreen>
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF111114), // Deep Zinc
-      body: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF111114),
-          gradient: RadialGradient(
-            center: const Alignment(0.65, -0.75),
-            radius: 1.5,
-            colors: [
-              accentGlow.withValues(
-                alpha: ble.isPoweredOn && ble.status == BleLedStatus.connected ? 0.08 : 0.02,
-              ),
-              const Color(0xFF111114),
-            ],
-            stops: const [0.0, 0.75],
-          ),
-        ),
-        child: Column(
-          children: [
-            // 1. CUSTOM WINDOWS TITLEBAR & CONTROL DECK
-            _buildWindowsTitleBar(ble, accentGlow),
-
-            // 2. RESPONSIVE WORKSPACE (SIDEBAR ON >= 920px, TABS ON < 920px)
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= 920;
-
-                  if (isWide) {
-                    return Row(
-                      children: [
-                        // Left Desktop Navigation Sidebar
-                        _buildDesktopSidebar(ble, accentGlow),
-
-                        // Main Content Area
-                        Expanded(
-                          child: Container(
-                            color: const Color(0xFF111114),
-                            child: tabPages[_selectedNavIndex],
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  // Compact Mobile / Narrow Window View with Top TabBar
-                  return Column(
-                    children: [
-                      _buildCompactTabBar(ble, accentGlow),
-                      Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: tabPages,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+      backgroundColor: GlassColors.voidBg,
+      body: Stack(
+        children: [
+          // Ambient reactive subsurface glow orbs for Glassmorphism depth
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: GlassColors.base,
+                gradient: RadialGradient(
+                  center: const Alignment(0.65, -0.75),
+                  radius: 1.5,
+                  colors: [
+                    accentGlow.withValues(alpha: isLive ? 0.10 : 0.03),
+                    GlassColors.voidBg,
+                  ],
+                  stops: const [0.0, 0.78],
+                ),
               ),
             ),
-
-            // 3. BOTTOM HARDWARE STATUS BAR
-            _buildBottomStatusBar(ble),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Custom Frameless TitleBar with Drag Area, BLE Controls, and Windows Min/Max/Close Buttons
-  Widget _buildWindowsTitleBar(BleLedService ble, Color accentGlow) {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: const Color(0xFF141417),
-        border: const Border(bottom: BorderSide(color: Color(0xFF27272A))),
-        boxShadow: [
-          BoxShadow(
-            color: accentGlow.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 3),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Drag Window Title Region
-          Expanded(
-            child: DragToMoveArea(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                color: Colors.transparent,
-                child: Row(
-                  children: [
-                    // Glowing App Icon
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [accentGlow, const Color(0xFF06B6D4)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(7),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accentGlow.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.bolt_rounded, color: Colors.white, size: 18),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'RGBZap LED Console',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.4,
-                              color: Colors.white,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            'ELK-BLEDOM • FF:FF:10:C5:29:1F',
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 9.5,
-                              color: Colors.white.withValues(alpha: 0.45),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-
-                    // Live Status Pill
-                    _buildStatusPill(ble.status),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(-0.7, 0.8),
+                  radius: 1.35,
+                  colors: [
+                    GlassColors.cyan.withValues(alpha: isLive ? 0.045 : 0.02),
+                    Colors.transparent,
                   ],
+                  stops: const [0.0, 0.65],
                 ),
               ),
             ),
           ),
 
-          // BLE Device Controls (Non-drag clickable region)
-          Row(
-            mainAxisSize: MainAxisSize.min,
+          // Main Shell Column
+          Column(
             children: [
-              _buildDeviceSelector(ble),
-              const SizedBox(width: 6),
+              // 1. CUSTOM WINDOWS TITLEBAR & CONTROL DECK
+              _buildWindowsTitleBar(ble, accentGlow, isLive),
 
-              // Refresh / Scan Button
-              IconButton(
-                icon: ble.status == BleLedStatus.scanning
-                    ? const SizedBox(
-                        width: 15,
-                        height: 15,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Color(0xFF38BDF8)),
+              // 2. RESPONSIVE WORKSPACE (SIDEBAR ON >= 920px, TABS ON < 920px)
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth >= 920;
+
+                    if (isWide) {
+                      return Row(
+                        children: [
+                          _buildDesktopSidebar(ble, accentGlow, isLive),
+                          Expanded(
+                            child: Container(
+                              color: Colors.transparent,
+                              child: tabPages[_selectedNavIndex],
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Column(
+                      children: [
+                        _buildCompactTabBar(ble, accentGlow),
+                        Expanded(
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: tabPages,
+                          ),
                         ),
-                      )
-                    : const Icon(Icons.refresh_rounded, size: 17),
-                tooltip: ble.status == BleLedStatus.scanning ? 'Scanning in progress...' : 'Scan for Devices',
-                color: const Color(0xFFA1A1AA),
-                visualDensity: VisualDensity.compact,
-                onPressed: () {
-                  if (ble.status == BleLedStatus.scanning) {
-                    ble.stopScan();
-                  } else {
-                    ble.startScan();
-                  }
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
-              const SizedBox(width: 8),
 
-              // Master Connect/Disconnect Switch
-              _buildMasterConnectionSwitch(ble),
-              const SizedBox(width: 12),
+              // 3. BOTTOM HARDWARE STATUS BAR
+              _buildBottomStatusBar(ble),
             ],
           ),
+        ],
+      ),
+    );
+  }
 
-          // Native Windows TitleBar Buttons (Min, Max/Restore, Close)
-          _buildWindowControls(),
+  /// Custom Frameless TitleBar with Frosted Glass, BLE Controls, and Win32 Buttons
+  Widget _buildWindowsTitleBar(
+    BleLedService ble,
+    Color accentGlow,
+    bool isLive,
+  ) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: GlassColors.canvas.withValues(alpha: 0.88),
+            border: const Border(
+              bottom: BorderSide(color: GlassColors.borderDefault),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: accentGlow.withValues(alpha: isLive ? 0.1 : 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Drag Window Title Region
+              Expanded(
+                child: DragToMoveArea(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    color: Colors.transparent,
+                    child: Row(
+                      children: [
+                        // Glowing App Icon
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [accentGlow, GlassColors.cyan],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(7),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentGlow.withValues(alpha: 0.45),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.bolt_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'RGB LED Console',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.4,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'ELK-BLEDOM • FF:FF:10:C5:29:1F',
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 9.5,
+                                  color: Colors.white.withValues(alpha: 0.45),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+
+                        // Live Pulsing Status Pill
+                        _PulsingStatusPill(status: ble.status),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // BLE Device Controls (Non-drag clickable region)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildDeviceSelector(ble),
+                  const SizedBox(width: 6),
+
+                  // Refresh / Scan Button
+                  IconButton(
+                    icon: ble.status == BleLedStatus.scanning
+                        ? const SizedBox(
+                            width: 15,
+                            height: 15,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(
+                                GlassColors.scanning,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.refresh_rounded, size: 17),
+                    tooltip: ble.status == BleLedStatus.scanning
+                        ? 'Scanning...'
+                        : 'Scan for BLE Devices',
+                    color: GlassColors.textMuted,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      if (ble.status == BleLedStatus.scanning) {
+                        ble.stopScan();
+                      } else {
+                        ble.startScan();
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Master Connect/Disconnect Switch
+                  _buildMasterConnectionSwitch(ble),
+                  const SizedBox(width: 4),
+
+                  // Keyboard Shortcuts Cheatsheet Trigger
+                  IconButton(
+                    icon: const Icon(Icons.help_outline_rounded, size: 16),
+                    tooltip: 'Keyboard Shortcuts & Hotkeys',
+                    color: GlassColors.textSubtle,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _showShortcutsDialog(context),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+              ),
+
+              // Native Windows TitleBar Buttons (Min, Max/Restore, Close)
+              _buildWindowControls(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showShortcutsDialog(BuildContext context) {
+    showGlassDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: GlassColors.overlay.withValues(alpha: 0.92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: GlassColors.borderRaised.withValues(alpha: 0.6),
+          ),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.keyboard_rounded, size: 22, color: GlassColors.cyan),
+            SizedBox(width: 10),
+            Text(
+              'Global Shortcuts & Cheatsheet',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _shortcutRow('Master Power Toggle', 'Ctrl + Alt + Home'),
+              _shortcutRow('Increase Brightness', 'Ctrl + Alt + PageUp'),
+              _shortcutRow('Decrease Brightness', 'Ctrl + Alt + PageDown'),
+              _shortcutRow('Toggle Screen Sync', 'Ctrl + Alt + End'),
+              _shortcutRow('Toggle Audio Reactive', 'Ctrl + Alt + Insert'),
+              _shortcutRow('Cycle Scenes', 'Ctrl + Alt + Shift + ←/→'),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GlassColors.scanning,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Close',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _shortcutRow(String action, String keys) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            action,
+            style: const TextStyle(
+              fontSize: 11.5,
+              color: GlassColors.textPrimary,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: GlassColors.borderDefault,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: GlassColors.borderRaised),
+            ),
+            child: Text(
+              keys,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: GlassColors.cyan,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -322,9 +461,11 @@ class _ConsoleScreenState extends State<ConsoleScreen>
           onPressed: () => windowManager.minimize(),
         ),
         _TitleBarButton(
-          icon: _isMaximized ? Icons.filter_none_rounded : Icons.crop_square_rounded,
+          icon: _isMaximized
+              ? Icons.filter_none_rounded
+              : Icons.crop_square_rounded,
           iconSize: _isMaximized ? 12 : 14,
-          tooltip: _isMaximized ? 'Restore' : 'Maximize',
+          tooltip: _isMaximized ? 'Restore Window' : 'Maximize',
           onPressed: () async {
             if (_isMaximized) {
               await windowManager.unmaximize();
@@ -344,12 +485,18 @@ class _ConsoleScreenState extends State<ConsoleScreen>
   }
 
   /// Left Sidebar Navigation Rail for Wide Displays (>= 920px)
-  Widget _buildDesktopSidebar(BleLedService ble, Color accentGlow) {
+  Widget _buildDesktopSidebar(
+    BleLedService ble,
+    Color accentGlow,
+    bool isLive,
+  ) {
     return Container(
       width: 200,
-      decoration: const BoxDecoration(
-        color: Color(0xFF141417),
-        border: Border(right: BorderSide(color: Color(0xFF27272A))),
+      decoration: BoxDecoration(
+        color: GlassColors.canvas.withValues(alpha: 0.85),
+        border: const Border(
+          right: BorderSide(color: GlassColors.borderDefault),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -369,7 +516,7 @@ class _ConsoleScreenState extends State<ConsoleScreen>
           ),
           const SizedBox(height: 6),
 
-          // Navigation Links
+          // Navigation Links with hover & neon states
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -377,116 +524,33 @@ class _ConsoleScreenState extends State<ConsoleScreen>
               separatorBuilder: (context, index) => const SizedBox(height: 4),
               itemBuilder: (context, index) {
                 final item = _navItems[index];
-                final isSelected = _selectedNavIndex == index;
-
-                return InkWell(
+                return _SidebarNavItem(
+                  title: item.title,
+                  icon: item.icon,
+                  isSelected: _selectedNavIndex == index,
+                  accentGlow: accentGlow,
                   onTap: () => _switchTab(index),
-                  borderRadius: BorderRadius.circular(8),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? accentGlow.withValues(alpha: 0.14)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected
-                            ? accentGlow.withValues(alpha: 0.5)
-                            : Colors.transparent,
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          item.icon,
-                          size: 18,
-                          color: isSelected ? accentGlow : const Color(0xFFA1A1AA),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          item.title,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            letterSpacing: 0.6,
-                            color: isSelected ? Colors.white : const Color(0xFFA1A1AA),
-                          ),
-                        ),
-                        if (isSelected) ...[
-                          const Spacer(),
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: accentGlow,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: accentGlow.withValues(alpha: 0.8),
-                                  blurRadius: 6,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
                 );
               },
             ),
           ),
 
-          // Sidebar Footer with Quick Power and Active Color Badge
+          // Sidebar Footer with Quick Power Pill and Active Color Badge
           Container(
             padding: const EdgeInsets.all(14),
             decoration: const BoxDecoration(
-              color: Color(0xFF0F0F12),
-              border: Border(top: BorderSide(color: Color(0xFF27272A))),
+              color: GlassColors.abyss,
+              border: Border(
+                top: BorderSide(color: GlassColors.borderDefault),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Quick Power Pill Button
-                InkWell(
+                _PowerPillButton(
+                  isPoweredOn: ble.isPoweredOn,
                   onTap: () => ble.togglePower(),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: ble.isPoweredOn
-                          ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                          : const Color(0xFF27272A),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: ble.isPoweredOn
-                            ? const Color(0xFF10B981).withValues(alpha: 0.4)
-                            : const Color(0xFF3F3F46),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.power_settings_new_rounded,
-                          size: 16,
-                          color: ble.isPoweredOn ? const Color(0xFF10B981) : const Color(0xFF71717A),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          ble.isPoweredOn ? 'STRIP POWER ON' : 'STRIP POWER OFF',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.6,
-                            color: ble.isPoweredOn ? const Color(0xFF10B981) : const Color(0xFF71717A),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 10),
 
@@ -498,14 +562,18 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                       height: 22,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: ble.currentColor,
+                        color: ble.isPoweredOn
+                            ? ble.currentColor
+                            : GlassColors.borderDefault,
                         border: Border.all(color: Colors.white30, width: 1.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: ble.currentColor.withValues(alpha: 0.6),
-                            blurRadius: 6,
-                          ),
-                        ],
+                        boxShadow: ble.isPoweredOn
+                            ? [
+                                BoxShadow(
+                                  color: ble.currentColor.withValues(alpha: 0.6),
+                                  blurRadius: 8,
+                                ),
+                              ]
+                            : [],
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -524,7 +592,10 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                           ),
                           Text(
                             '${ble.currentBrightness}% Brightness',
-                            style: const TextStyle(fontSize: 10, color: Color(0xFF71717A)),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: GlassColors.textSubtle,
+                            ),
                           ),
                         ],
                       ),
@@ -543,9 +614,11 @@ class _ConsoleScreenState extends State<ConsoleScreen>
   Widget _buildCompactTabBar(BleLedService ble, Color accentGlow) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: const BoxDecoration(
-        color: Color(0xFF141417),
-        border: Border(bottom: BorderSide(color: Color(0xFF27272A))),
+      decoration: BoxDecoration(
+        color: GlassColors.canvas.withValues(alpha: 0.9),
+        border: const Border(
+          bottom: BorderSide(color: GlassColors.borderDefault),
+        ),
       ),
       child: Row(
         children: [
@@ -556,16 +629,20 @@ class _ConsoleScreenState extends State<ConsoleScreen>
               tabAlignment: TabAlignment.start,
               indicatorSize: TabBarIndicatorSize.tab,
               indicator: BoxDecoration(
-                color: const Color(0xFF27272A),
+                color: GlassColors.borderDefault,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: accentGlow.withValues(alpha: 0.6),
+                  color: accentGlow.withValues(alpha: 0.65),
                   width: 1.2,
                 ),
               ),
               labelColor: Colors.white,
-              unselectedLabelColor: const Color(0xFF71717A),
-              labelStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, letterSpacing: 0.6),
+              unselectedLabelColor: GlassColors.textSubtle,
+              labelStyle: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.6,
+              ),
               dividerColor: Colors.transparent,
               tabs: _navItems.map((item) {
                 return Tab(
@@ -590,9 +667,13 @@ class _ConsoleScreenState extends State<ConsoleScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF18181B),
+                color: GlassColors.glass,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFF27272A)),
+                border: Border.all(
+                  color: ble.isPoweredOn
+                      ? GlassColors.connected.withValues(alpha: 0.45)
+                      : GlassColors.borderDefault,
+                ),
               ),
               child: Row(
                 children: [
@@ -601,7 +682,17 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                     height: 7,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: ble.isPoweredOn ? const Color(0xFF10B981) : const Color(0xFF71717A),
+                      color: ble.isPoweredOn
+                          ? GlassColors.connected
+                          : GlassColors.textSubtle,
+                      boxShadow: ble.isPoweredOn
+                          ? [
+                              const BoxShadow(
+                                color: GlassColors.connected,
+                                blurRadius: 5,
+                              ),
+                            ]
+                          : [],
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -610,7 +701,9 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: ble.isPoweredOn ? const Color(0xFF10B981) : const Color(0xFF71717A),
+                      color: ble.isPoweredOn
+                          ? GlassColors.connected
+                          : GlassColors.textSubtle,
                     ),
                   ),
                 ],
@@ -622,104 +715,44 @@ class _ConsoleScreenState extends State<ConsoleScreen>
     );
   }
 
-  /// Bottom Protocol & Peripheral Status Bar
+  /// Bottom Protocol & Peripheral Status Bar (28px)
   Widget _buildBottomStatusBar(BleLedService ble) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      height: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFF0F0F12),
-        border: Border(top: BorderSide(color: Color(0xFF1F1F23))),
+        color: GlassColors.abyss,
+        border: Border(top: BorderSide(color: GlassColors.borderSubtle)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.bluetooth_audio_rounded, size: 13, color: Color(0xFF71717A)),
+          const Icon(
+            Icons.bluetooth_audio_rounded,
+            size: 13,
+            color: GlassColors.textSubtle,
+          ),
           const SizedBox(width: 6),
-          Text(
+          SelectableText(
             ble.selectedDevice != null
                 ? 'Target: ${ble.selectedDevice!.name ?? 'ELK-BLEDOM'} (${ble.selectedDevice!.deviceId})'
                 : 'No BLE peripheral connected',
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Color(0xFF71717A)),
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 11,
+              color: GlassColors.textSubtle,
+            ),
           ),
           const Spacer(),
-          Text(
-            'Active Char: ${ble.activeCharUuid} • 55ms Rate Queue • Comfort Engine Active',
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 10.5,
-              color: Colors.white.withValues(alpha: 0.35),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusPill(BleLedStatus status) {
-    Color dotColor;
-    Color bgColor;
-    String label;
-
-    switch (status) {
-      case BleLedStatus.connected:
-        dotColor = const Color(0xFF10B981); // Emerald
-        bgColor = const Color(0xFF10B981).withValues(alpha: 0.15);
-        label = 'CONNECTED';
-        break;
-      case BleLedStatus.connecting:
-        dotColor = const Color(0xFFFBBF24); // Amber
-        bgColor = const Color(0xFFFBBF24).withValues(alpha: 0.15);
-        label = 'CONNECTING...';
-        break;
-      case BleLedStatus.scanning:
-        dotColor = const Color(0xFF38BDF8); // Sky
-        bgColor = const Color(0xFF38BDF8).withValues(alpha: 0.15);
-        label = 'SCANNING...';
-        break;
-      case BleLedStatus.reconnecting:
-        dotColor = const Color(0xFFFB923C); // Orange
-        bgColor = const Color(0xFFFB923C).withValues(alpha: 0.15);
-        label = 'RECONNECTING...';
-        break;
-      case BleLedStatus.offline:
-        dotColor = const Color(0xFFEF4444); // Red
-        bgColor = const Color(0xFFEF4444).withValues(alpha: 0.12);
-        label = 'OFFLINE';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: dotColor.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6.5,
-            height: 6.5,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: dotColor,
-              boxShadow: [
-                BoxShadow(
-                  color: dotColor.withValues(alpha: 0.7),
-                  blurRadius: 5,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-              color: dotColor,
+          Flexible(
+            child: Text(
+              'Active Char: ${ble.activeCharUuid} • 55ms Queue • Comfort Engine',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 10.5,
+                color: Colors.white.withValues(alpha: 0.35),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -734,35 +767,49 @@ class _ConsoleScreenState extends State<ConsoleScreen>
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1C20),
+        color: GlassColors.elevated,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF2E2E33)),
+        border: Border.all(color: GlassColors.borderMuted),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          dropdownColor: const Color(0xFF1C1C20),
+          dropdownColor: GlassColors.elevated,
           value: ble.selectedDevice?.deviceId,
           hint: const Text(
             'Select Device',
-            style: TextStyle(fontSize: 11.5, color: Color(0xFF71717A)),
+            style: TextStyle(fontSize: 11.5, color: GlassColors.textSubtle),
           ),
-          icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFFA1A1AA), size: 18),
+          icon: const Icon(
+            Icons.arrow_drop_down_rounded,
+            color: GlassColors.textMuted,
+            size: 18,
+          ),
           style: const TextStyle(fontSize: 11.5, color: Colors.white),
           items: devices.isEmpty && ble.selectedDevice == null
               ? [
                   const DropdownMenuItem<String>(
                     value: null,
                     enabled: false,
-                    child: Text('Scanning for devices...', style: TextStyle(color: Color(0xFF71717A))),
-                  )
+                    child: Text(
+                      'Scanning for devices...',
+                      style: TextStyle(color: GlassColors.textSubtle),
+                    ),
+                  ),
                 ]
               : {
-                  if (ble.selectedDevice != null && !devices.any((d) => d.deviceId == ble.selectedDevice!.deviceId))
+                  if (ble.selectedDevice != null &&
+                      !devices.any(
+                        (d) => d.deviceId == ble.selectedDevice!.deviceId,
+                      ))
                     ble.selectedDevice!,
                   ...devices,
                 }.map((device) {
-                  final isTarget = device.deviceId.toUpperCase() == ElkProtocol.targetDeviceAddress;
-                  final isElk = (device.name ?? '').toUpperCase().contains(ElkProtocol.targetDeviceNamePrefix);
+                  final isTarget =
+                      device.deviceId.toUpperCase() ==
+                      ElkProtocol.targetDeviceAddress;
+                  final isElk = (device.name ?? '').toUpperCase().contains(
+                    ElkProtocol.targetDeviceNamePrefix,
+                  );
 
                   return DropdownMenuItem<String>(
                     value: device.deviceId,
@@ -770,18 +817,28 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          isTarget ? Icons.star_rounded : Icons.bluetooth_rounded,
+                          isTarget
+                              ? Icons.star_rounded
+                              : Icons.bluetooth_rounded,
                           size: 14,
-                          color: isTarget ? const Color(0xFFFBBF24) : const Color(0xFF38BDF8),
+                          color: isTarget
+                              ? GlassColors.connecting
+                              : GlassColors.scanning,
                         ),
                         const SizedBox(width: 6),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 120),
                           child: Text(
-                            device.name != null && device.name!.isNotEmpty ? device.name! : 'Unknown Device',
+                            device.name != null && device.name!.isNotEmpty
+                                ? device.name!
+                                : 'Unknown Device',
                             style: TextStyle(
-                              fontWeight: isTarget ? FontWeight.bold : FontWeight.normal,
-                              color: isTarget ? const Color(0xFFFBBF24) : Colors.white,
+                              fontWeight: isTarget
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isTarget
+                                  ? GlassColors.connecting
+                                  : Colors.white,
                             ),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
@@ -790,14 +847,23 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                         const SizedBox(width: 6),
                         Text(
                           '(${device.deviceId})',
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF71717A)),
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 9.5,
+                            color: GlassColors.textSubtle,
+                          ),
                         ),
                         if (isTarget || isElk) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFBBF24).withValues(alpha: 0.2),
+                              color: GlassColors.connecting.withValues(
+                                alpha: 0.2,
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
@@ -805,7 +871,7 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                               style: TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFFBBF24),
+                                color: GlassColors.connecting,
                               ),
                             ),
                           ),
@@ -830,16 +896,22 @@ class _ConsoleScreenState extends State<ConsoleScreen>
 
   Widget _buildMasterConnectionSwitch(BleLedService ble) {
     final isConnected = ble.status == BleLedStatus.connected;
-    final isBusy = ble.status == BleLedStatus.connecting || ble.status == BleLedStatus.reconnecting;
+    final isBusy =
+        ble.status == BleLedStatus.connecting ||
+        ble.status == BleLedStatus.reconnecting;
 
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         backgroundColor: isConnected
-            ? const Color(0xFF10B981).withValues(alpha: 0.2)
-            : const Color(0xFF27272A),
-        foregroundColor: isConnected ? const Color(0xFF34D399) : const Color(0xFFA1A1AA),
+            ? GlassColors.connected.withValues(alpha: 0.2)
+            : GlassColors.borderDefault,
+        foregroundColor: isConnected
+            ? GlassColors.connectedLight
+            : GlassColors.textMuted,
         side: BorderSide(
-          color: isConnected ? const Color(0xFF10B981) : const Color(0xFF3F3F46),
+          color: isConnected
+              ? GlassColors.connected
+              : GlassColors.borderRaised,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         minimumSize: Size.zero,
@@ -847,16 +919,22 @@ class _ConsoleScreenState extends State<ConsoleScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
       icon: Icon(
-        isConnected ? Icons.bluetooth_connected_rounded : Icons.bluetooth_disabled_rounded,
+        isConnected
+            ? Icons.bluetooth_connected_rounded
+            : Icons.bluetooth_disabled_rounded,
         size: 15,
       ),
       label: Text(
         isConnected
             ? 'DISCONNECT'
             : isBusy
-                ? 'CONNECTING...'
-                : 'CONNECT',
-        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            ? 'CONNECTING...'
+            : 'CONNECT',
+        style: const TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
       ),
       onPressed: isBusy
           ? null
@@ -871,6 +949,302 @@ class _ConsoleScreenState extends State<ConsoleScreen>
                 }
               }
             },
+    );
+  }
+}
+
+/// Pulsing Neon Status Pill for the title bar
+class _PulsingStatusPill extends StatefulWidget {
+  final BleLedStatus status;
+
+  const _PulsingStatusPill({required this.status});
+
+  @override
+  State<_PulsingStatusPill> createState() => _PulsingStatusPillState();
+}
+
+class _PulsingStatusPillState extends State<_PulsingStatusPill>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color dotColor;
+    final Color bgColor;
+    final String label;
+    final bool shouldPulse;
+
+    switch (widget.status) {
+      case BleLedStatus.connected:
+        dotColor = GlassColors.connected;
+        bgColor = GlassColors.connected.withValues(alpha: 0.15);
+        label = 'CONNECTED';
+        shouldPulse = false;
+        break;
+      case BleLedStatus.connecting:
+        dotColor = GlassColors.connecting;
+        bgColor = GlassColors.connecting.withValues(alpha: 0.15);
+        label = 'CONNECTING...';
+        shouldPulse = true;
+        break;
+      case BleLedStatus.scanning:
+        dotColor = GlassColors.scanning;
+        bgColor = GlassColors.scanning.withValues(alpha: 0.15);
+        label = 'SCANNING...';
+        shouldPulse = true;
+        break;
+      case BleLedStatus.reconnecting:
+        dotColor = GlassColors.reconnecting;
+        bgColor = GlassColors.reconnecting.withValues(alpha: 0.15);
+        label = 'RECONNECTING...';
+        shouldPulse = true;
+        break;
+      case BleLedStatus.offline:
+        dotColor = GlassColors.offline;
+        bgColor = GlassColors.offline.withValues(alpha: 0.12);
+        label = 'OFFLINE';
+        shouldPulse = false;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: dotColor.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
+            animation: _pulseController,
+            builder: (context, _) {
+              final pulse = shouldPulse ? _pulseController.value : 0.4;
+              return Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: dotColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: dotColor.withValues(
+                        alpha: shouldPulse ? (0.4 + 0.45 * pulse) : 0.7,
+                      ),
+                      blurRadius: shouldPulse ? (4 + 5 * pulse) : 5,
+                      spreadRadius: shouldPulse ? (pulse * 1.5) : 1,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.6,
+              color: dotColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sidebar Navigation Item with hover & active neon indicator
+class _SidebarNavItem extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final bool isSelected;
+  final Color accentGlow;
+  final VoidCallback onTap;
+
+  const _SidebarNavItem({
+    required this.title,
+    required this.icon,
+    required this.isSelected,
+    required this.accentGlow,
+    required this.onTap,
+  });
+
+  @override
+  State<_SidebarNavItem> createState() => _SidebarNavItemState();
+}
+
+class _SidebarNavItemState extends State<_SidebarNavItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = widget.isSelected
+        ? widget.accentGlow.withValues(alpha: 0.14)
+        : (_isHovered
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.transparent);
+
+    final borderColor = widget.isSelected
+        ? widget.accentGlow.withValues(alpha: 0.5)
+        : (_isHovered
+              ? GlassColors.borderRaised.withValues(alpha: 0.5)
+              : Colors.transparent);
+
+    final iconColor = widget.isSelected
+        ? widget.accentGlow
+        : (_isHovered ? GlassColors.textPrimary : GlassColors.textMuted);
+
+    final textColor = widget.isSelected || _isHovered
+        ? GlassColors.textPrimary
+        : GlassColors.textMuted;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: widget.isSelected ? 180 : 120),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: borderColor,
+              width: widget.isSelected ? 1.2 : 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(widget.icon, size: 18, color: iconColor),
+              const SizedBox(width: 12),
+              Text(
+                widget.title,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.w500,
+                  letterSpacing: 0.6,
+                  color: textColor,
+                ),
+              ),
+              if (widget.isSelected) ...[
+                const Spacer(),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: widget.accentGlow,
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.accentGlow.withValues(alpha: 0.8),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Interactive Power Pill Button in sidebar footer
+class _PowerPillButton extends StatefulWidget {
+  final bool isPoweredOn;
+  final VoidCallback onTap;
+
+  const _PowerPillButton({required this.isPoweredOn, required this.onTap});
+
+  @override
+  State<_PowerPillButton> createState() => _PowerPillButtonState();
+}
+
+class _PowerPillButtonState extends State<_PowerPillButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = widget.isPoweredOn;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          decoration: BoxDecoration(
+            color: active
+                ? GlassColors.connected.withValues(alpha: _isHovered ? 0.24 : 0.16)
+                : (_isHovered
+                      ? GlassColors.borderRaised.withValues(alpha: 0.5)
+                      : GlassColors.borderDefault),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: active
+                  ? GlassColors.connected.withValues(alpha: _isHovered ? 0.7 : 0.45)
+                  : (_isHovered
+                        ? GlassColors.borderHover
+                        : GlassColors.borderRaised),
+            ),
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: GlassColors.connected.withValues(alpha: 0.18),
+                      blurRadius: 10,
+                    ),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.power_settings_new_rounded,
+                size: 16,
+                color: active ? GlassColors.connected : GlassColors.textSubtle,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                active ? 'STRIP POWER ON' : 'STRIP POWER OFF',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.6,
+                  color: active ? GlassColors.connected : GlassColors.textSubtle,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -900,20 +1274,22 @@ class _TitleBarButtonState extends State<_TitleBarButton> {
 
   @override
   Widget build(BuildContext context) {
-    Color hoverBg = widget.isClose ? const Color(0xFFE81123) : const Color(0xFF27272A);
-    Color iconColor = _isHovered && widget.isClose ? Colors.white : const Color(0xFFA1A1AA);
+    final hoverBg =
+        widget.isClose ? GlassColors.offline : GlassColors.borderRaised;
+    final iconColor = _isHovered ? Colors.white : GlassColors.textMuted;
 
     return Tooltip(
       message: widget.tooltip,
-      waitDuration: const Duration(milliseconds: 600),
+      waitDuration: const Duration(milliseconds: 500),
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: GestureDetector(
           onTap: widget.onPressed,
           behavior: HitTestBehavior.opaque,
-          child: Container(
-            width: 44,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            width: 46,
             height: 48,
             color: _isHovered ? hoverBg : Colors.transparent,
             child: Center(

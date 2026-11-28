@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/local_api_service.dart';
 import '../../services/obs_service.dart';
+import '../theme/glass_theme.dart';
 import '../widgets/glowing_card.dart';
 
 class ToolsTab extends StatefulWidget {
@@ -27,8 +28,10 @@ class _ToolsTabState extends State<ToolsTab> {
   void initState() {
     super.initState();
     _obsHostController = TextEditingController(text: widget.obsService.host);
-    _obsPortController = TextEditingController(text: widget.obsService.port.toString());
-    _obsPasswordController = TextEditingController(text: widget.obsService.password);
+    _obsPortController =
+        TextEditingController(text: widget.obsService.port.toString());
+    _obsPasswordController =
+        TextEditingController(text: widget.obsService.password);
   }
 
   @override
@@ -54,15 +57,35 @@ class _ToolsTabState extends State<ToolsTab> {
             children: [
               // 1. LOCAL HTTP REST API & CLI
               GlowingCard(
-                glowColor: const Color(0xFF10B981),
+                glowColor: GlassColors.connected,
                 isGlowing: api.isEnabled,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.http_rounded, size: 22, color: Color(0xFF10B981)),
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: GlassColors.connected.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: GlassColors.connected.withValues(
+                                alpha: 0.45,
+                              ),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.http_rounded,
+                            size: 20,
+                            color: GlassColors.connected,
+                          ),
+                        ),
                         const SizedBox(width: 10),
                         const Expanded(
                           child: Column(
@@ -71,57 +94,78 @@ class _ToolsTabState extends State<ToolsTab> {
                               Text(
                                 'LOCAL HTTP CONTROL API & CLI',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.8,
-                                  color: Color(0xFFA1A1AA),
+                                  color: GlassColors.textMuted,
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              SizedBox(height: 1),
                               Text(
                                 'Enables external scripts, Stream Deck, and terminal CLI control',
-                                style: TextStyle(fontSize: 11.5, color: Color(0xFF71717A)),
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: GlassColors.textSubtle,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         Switch(
                           value: api.isEnabled,
-                          activeThumbColor: const Color(0xFF10B981),
+                          activeThumbColor: GlassColors.connected,
                           onChanged: (val) => api.setEnabled(val),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
 
                     // Endpoint & Port
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF141417),
+                        color: GlassColors.canvas.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF27272A)),
+                        border: Border.all(color: GlassColors.borderDefault),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.lan_rounded, size: 16, color: Color(0xFF38BDF8)),
+                          const Icon(
+                            Icons.lan_rounded,
+                            size: 15,
+                            color: GlassColors.scanning,
+                          ),
                           const SizedBox(width: 8),
                           const Text(
                             'Endpoint URL:',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFA1A1AA)),
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: GlassColors.textMuted,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           const SelectableText(
                             'http://127.0.0.1:49732',
-                            style: TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white),
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 11.5,
+                              color: Colors.white,
+                            ),
                           ),
                           const Spacer(),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: api.isEnabled
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.2)
-                                  : const Color(0xFF27272A),
+                                  ? GlassColors.connected.withValues(alpha: 0.2)
+                                  : GlassColors.borderDefault,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -129,36 +173,53 @@ class _ToolsTabState extends State<ToolsTab> {
                               style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.bold,
-                                color: api.isEnabled ? const Color(0xFF10B981) : const Color(0xFF71717A),
+                                color: api.isEnabled
+                                    ? GlassColors.connected
+                                    : GlassColors.textSubtle,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
 
                     // Secret Bearer Token
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF141417),
+                        color: GlassColors.canvas.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF27272A)),
+                        border: Border.all(color: GlassColors.borderDefault),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.key_rounded, size: 16, color: Color(0xFFFBBF24)),
+                          const Icon(
+                            Icons.key_rounded,
+                            size: 15,
+                            color: GlassColors.connecting,
+                          ),
                           const SizedBox(width: 8),
                           const Text(
                             'Bearer Token:',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFA1A1AA)),
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: GlassColors.textMuted,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: SelectableText(
                               api.token,
-                              style: const TextStyle(fontFamily: 'monospace', fontSize: 11.5, color: Color(0xFFFDE68A)),
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 11,
+                                color: Color(0xFFFDE68A),
+                              ),
                               maxLines: 1,
                             ),
                           ),
@@ -166,11 +227,14 @@ class _ToolsTabState extends State<ToolsTab> {
                             icon: const Icon(Icons.copy_rounded, size: 15),
                             tooltip: 'Copy Bearer Token',
                             visualDensity: VisualDensity.compact,
-                            color: const Color(0xFFA1A1AA),
+                            color: GlassColors.textMuted,
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: api.token));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Bearer token copied to clipboard!')),
+                              showNeonToast(
+                                context,
+                                'Bearer token copied to clipboard',
+                                icon: Icons.copy_rounded,
+                                accentColor: GlassColors.connecting,
                               );
                             },
                           ),
@@ -178,8 +242,16 @@ class _ToolsTabState extends State<ToolsTab> {
                             icon: const Icon(Icons.refresh_rounded, size: 15),
                             tooltip: 'Regenerate Token',
                             visualDensity: VisualDensity.compact,
-                            color: const Color(0xFFA1A1AA),
-                            onPressed: () => api.regenerateToken(),
+                            color: GlassColors.textMuted,
+                            onPressed: () {
+                              api.regenerateToken();
+                              showNeonToast(
+                                context,
+                                'Generated new Bearer token',
+                                icon: Icons.key_rounded,
+                                accentColor: GlassColors.connected,
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -187,49 +259,64 @@ class _ToolsTabState extends State<ToolsTab> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-              // 2. AI ASSISTANT (MODEL CONTEXT PROTOCOL / MCP) INTEGRATION
+              // 2. AI ASSISTANT (MCP) INTEGRATION
               GlowingCard(
-                glowColor: const Color(0xFFA855F7),
-                padding: const EdgeInsets.all(20),
+                glowColor: GlassColors.purple,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.smart_toy_rounded, size: 20, color: Color(0xFFA855F7)),
-                        SizedBox(width: 8),
-                        Text(
-                          'AI ASSISTANT (MCP) INTEGRATION',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                            color: Color(0xFFA1A1AA),
-                          ),
-                        ),
-                      ],
+                    const GlassSectionHeader(
+                      icon: Icons.smart_toy_rounded,
+                      title: 'AI ASSISTANT (MCP) INTEGRATION',
+                      accentColor: GlassColors.purple,
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'Allow AI assistants like Claude, Cursor, or ChatGPT to set ambient lighting, switch scenes, or flash alerts upon task completion.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFA1A1AA), height: 1.3),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: GlassColors.textMuted,
+                        height: 1.35,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFC4B5FD),
-                        side: const BorderSide(color: Color(0xFFA855F7)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: GlassColors.purple.withValues(
+                          alpha: 0.08,
+                        ),
+                        side: BorderSide(
+                          color: GlassColors.purple.withValues(alpha: 0.7),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      icon: const Icon(Icons.terminal_rounded, size: 16),
-                      label: const Text('Copy Claude MCP Setup Command'),
+                      icon: const Icon(Icons.terminal_rounded, size: 15),
+                      label: const Text(
+                        'Copy CLI Verification Command',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
                       onPressed: () {
-                        final cmd = 'curl -X POST http://127.0.0.1:49732/status -H "Authorization: Bearer ${api.token}"';
+                        final cmd =
+                            'curl -X POST http://127.0.0.1:49732/status -H "Authorization: Bearer ${api.token}"';
                         Clipboard.setData(ClipboardData(text: cmd));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Copied CLI verification command to clipboard!')),
+                        showNeonToast(
+                          context,
+                          'Copied CLI verification command',
+                          icon: Icons.terminal_rounded,
+                          accentColor: GlassColors.purple,
                         );
                       },
                     ),
@@ -240,15 +327,35 @@ class _ToolsTabState extends State<ToolsTab> {
 
               // 3. OBS STUDIO TALLY & SCENE LINK
               GlowingCard(
-                glowColor: const Color(0xFFEF4444),
+                glowColor: GlassColors.offline,
                 isGlowing: obs.isConnected,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.videocam_rounded, size: 22, color: Color(0xFFEF4444)),
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: GlassColors.offline.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: GlassColors.offline.withValues(
+                                alpha: 0.45,
+                              ),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.videocam_rounded,
+                            size: 19,
+                            color: GlassColors.offline,
+                          ),
+                        ),
                         const SizedBox(width: 10),
                         const Expanded(
                           child: Column(
@@ -257,43 +364,54 @@ class _ToolsTabState extends State<ToolsTab> {
                               Text(
                                 'OBS STUDIO 28+ WEBSOCKET TALLY LINK',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.8,
-                                  color: Color(0xFFA1A1AA),
+                                  color: GlassColors.textMuted,
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              SizedBox(height: 1),
                               Text(
                                 'Lights strip Red automatically while streaming or recording in OBS',
-                                style: TextStyle(fontSize: 11.5, color: Color(0xFF71717A)),
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: GlassColors.textSubtle,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         Switch(
                           value: obs.isEnabled,
-                          activeThumbColor: const Color(0xFFEF4444),
+                          activeThumbColor: GlassColors.offline,
                           onChanged: (val) => obs.setEnabled(val),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
 
-                    // Host & Port configuration
                     Row(
                       children: [
                         Expanded(
                           flex: 2,
                           child: TextField(
                             controller: _obsHostController,
-                            style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace'),
-                            decoration: const InputDecoration(
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Colors.white,
+                              fontFamily: 'monospace',
+                            ),
+                            decoration: InputDecoration(
                               labelText: 'WebSocket Host',
-                              labelStyle: TextStyle(fontSize: 11, color: Color(0xFFA1A1AA)),
+                              labelStyle: const TextStyle(
+                                fontSize: 11,
+                                color: GlassColors.textMuted,
+                              ),
                               filled: true,
-                              fillColor: Color(0xFF141417),
-                              border: OutlineInputBorder(),
+                              fillColor: GlassColors.canvas,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               isDense: true,
                             ),
                           ),
@@ -303,13 +421,22 @@ class _ToolsTabState extends State<ToolsTab> {
                           flex: 1,
                           child: TextField(
                             controller: _obsPortController,
-                            style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace'),
-                            decoration: const InputDecoration(
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Colors.white,
+                              fontFamily: 'monospace',
+                            ),
+                            decoration: InputDecoration(
                               labelText: 'Port (4455)',
-                              labelStyle: TextStyle(fontSize: 11, color: Color(0xFFA1A1AA)),
+                              labelStyle: const TextStyle(
+                                fontSize: 11,
+                                color: GlassColors.textMuted,
+                              ),
                               filled: true,
-                              fillColor: Color(0xFF141417),
-                              border: OutlineInputBorder(),
+                              fillColor: GlassColors.canvas,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               isDense: true,
                             ),
                           ),
@@ -317,40 +444,79 @@ class _ToolsTabState extends State<ToolsTab> {
                         const SizedBox(width: 10),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF27272A),
+                            backgroundColor: GlassColors.borderDefault,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            side: const BorderSide(
+                              color: GlassColors.borderRaised,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           onPressed: () {
-                            final portNum = int.tryParse(_obsPortController.text) ?? 4455;
-                            obs.updateConfig(host: _obsHostController.text, port: portNum);
+                            final portNum =
+                                int.tryParse(_obsPortController.text) ?? 4455;
+                            obs.updateConfig(
+                              host: _obsHostController.text,
+                              port: portNum,
+                            );
+                            showNeonToast(
+                              context,
+                              'Saved OBS WebSocket config',
+                              icon: Icons.videocam_rounded,
+                              accentColor: GlassColors.offline,
+                            );
                           },
-                          child: const Text('Save'),
+                          child: const Text(
+                            'Save',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
 
-                    // Tally switches
                     Row(
                       children: [
                         Expanded(
                           child: CheckboxListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Red on Stream', style: TextStyle(fontSize: 12, color: Colors.white)),
+                            dense: true,
+                            title: const Text(
+                              'Red on Stream',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Colors.white,
+                              ),
+                            ),
                             value: obs.redOnLive,
-                            activeColor: const Color(0xFFEF4444),
-                            onChanged: (val) => obs.updateConfig(redOnLive: val ?? true),
+                            activeColor: GlassColors.offline,
+                            onChanged: (val) =>
+                                obs.updateConfig(redOnLive: val ?? true),
                           ),
                         ),
                         Expanded(
                           child: CheckboxListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Red on Record', style: TextStyle(fontSize: 12, color: Colors.white)),
+                            dense: true,
+                            title: const Text(
+                              'Red on Record',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Colors.white,
+                              ),
+                            ),
                             value: obs.redOnRecord,
-                            activeColor: const Color(0xFFEF4444),
-                            onChanged: (val) => obs.updateConfig(redOnRecord: val ?? true),
+                            activeColor: GlassColors.offline,
+                            onChanged: (val) =>
+                                obs.updateConfig(redOnRecord: val ?? true),
                           ),
                         ),
                       ],
@@ -362,32 +528,46 @@ class _ToolsTabState extends State<ToolsTab> {
 
               // 4. GLOBAL WINDOWS HOTKEYS REFERENCE
               GlowingCard(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.keyboard_rounded, size: 20, color: Color(0xFF06B6D4)),
-                        SizedBox(width: 8),
-                        Text(
-                          'GLOBAL WINDOWS HOTKEYS',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                            color: Color(0xFFA1A1AA),
-                          ),
-                        ),
-                      ],
+                    const GlassSectionHeader(
+                      icon: Icons.keyboard_rounded,
+                      title: 'GLOBAL WINDOWS HOTKEYS',
+                      accentColor: GlassColors.cyan,
                     ),
-                    const SizedBox(height: 12),
-                    _buildHotkeyRow('Master Power Toggle', 'Ctrl + Alt + Home'),
-                    _buildHotkeyRow('Increase Brightness', 'Ctrl + Alt + PageUp'),
-                    _buildHotkeyRow('Decrease Brightness', 'Ctrl + Alt + PageDown'),
-                    _buildHotkeyRow('Toggle Screen Sync (Ambilight)', 'Ctrl + Alt + End'),
-                    _buildHotkeyRow('Toggle Audio Reactive Visualizer', 'Ctrl + Alt + Insert'),
-                    _buildHotkeyRow('Cycle Next / Prev Scene', 'Ctrl + Alt + Shift + Left / Right'),
+                    const SizedBox(height: 10),
+                    _buildHotkeyRow(
+                      'Master Power Toggle',
+                      'Ctrl + Alt + Home',
+                      shaded: true,
+                    ),
+                    _buildHotkeyRow(
+                      'Increase Brightness',
+                      'Ctrl + Alt + PageUp',
+                    ),
+                    _buildHotkeyRow(
+                      'Decrease Brightness',
+                      'Ctrl + Alt + PageDown',
+                      shaded: true,
+                    ),
+                    _buildHotkeyRow(
+                      'Toggle Screen Sync (Ambilight)',
+                      'Ctrl + Alt + End',
+                    ),
+                    _buildHotkeyRow(
+                      'Toggle Audio Reactive Visualizer',
+                      'Ctrl + Alt + Insert',
+                      shaded: true,
+                    ),
+                    _buildHotkeyRow(
+                      'Cycle Next / Prev Scene',
+                      'Ctrl + Alt + Shift + Left / Right',
+                    ),
                   ],
                 ),
               ),
@@ -398,23 +578,37 @@ class _ToolsTabState extends State<ToolsTab> {
     );
   }
 
-  Widget _buildHotkeyRow(String action, String keys) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+  Widget _buildHotkeyRow(String action, String keys, {bool shaded = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: shaded
+            ? Colors.white.withValues(alpha: 0.025)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(action, style: const TextStyle(fontSize: 12, color: Color(0xFFE4E4E7))),
+          Text(
+            action,
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFFE4E4E7)),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: const Color(0xFF141417),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFF27272A)),
+              color: GlassColors.borderDefault,
+              borderRadius: BorderRadius.circular(5),
+              border: Border.all(color: GlassColors.borderRaised),
             ),
             child: Text(
               keys,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF06B6D4)),
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: GlassColors.cyan,
+              ),
             ),
           ),
         ],

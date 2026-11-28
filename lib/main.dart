@@ -7,6 +7,7 @@ import 'services/local_api_service.dart';
 import 'services/obs_service.dart';
 import 'services/screen_sync_service.dart';
 import 'ui/console_screen.dart';
+import 'ui/theme/glass_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +22,7 @@ void main() async {
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.hidden, // Frameless custom Windows titlebar
-    title: 'RGBZap LED Console • ELK-BLEDOM BLE Controller',
+    title: 'RGB LED Console • ELK-BLEDOM BLE Controller',
   );
 
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -30,17 +31,17 @@ void main() async {
     await windowManager.setPreventClose(true);
   });
 
-  runApp(const RgbZapApp());
+  runApp(const RgbConsoleApp());
 }
 
-class RgbZapApp extends StatefulWidget {
-  const RgbZapApp({super.key});
+class RgbConsoleApp extends StatefulWidget {
+  const RgbConsoleApp({super.key});
 
   @override
-  State<RgbZapApp> createState() => _RgbZapAppState();
+  State<RgbConsoleApp> createState() => _RgbConsoleAppState();
 }
 
-class _RgbZapAppState extends State<RgbZapApp> {
+class _RgbConsoleAppState extends State<RgbConsoleApp> {
   late final BleLedService _bleService;
   late final ScreenSyncService _screenSyncService;
   late final AudioReactiveService _audioReactiveService;
@@ -76,39 +77,50 @@ class _RgbZapAppState extends State<RgbZapApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<BleLedService>.value(value: _bleService),
-        ChangeNotifierProvider<ScreenSyncService>.value(value: _screenSyncService),
-        ChangeNotifierProvider<AudioReactiveService>.value(value: _audioReactiveService),
+        ChangeNotifierProvider<ScreenSyncService>.value(
+          value: _screenSyncService,
+        ),
+        ChangeNotifierProvider<AudioReactiveService>.value(
+          value: _audioReactiveService,
+        ),
         ChangeNotifierProvider<LocalApiService>.value(value: _localApiService),
         ChangeNotifierProvider<ObsService>.value(value: _obsService),
       ],
       child: MaterialApp(
-        title: 'RGBZap LED Console',
+        title: 'RGB LED Console',
         debugShowCheckedModeBanner: false,
         themeMode: ThemeMode.dark,
         darkTheme: ThemeData(
           brightness: Brightness.dark,
           useMaterial3: true,
-          scaffoldBackgroundColor: const Color(0xFF111114),
-          cardColor: const Color(0xFF18181B),
-          canvasColor: const Color(0xFF141417),
+          scaffoldBackgroundColor: GlassColors.base,
+          cardColor: GlassColors.glass,
+          canvasColor: GlassColors.canvas,
           colorScheme: const ColorScheme.dark(
-            primary: Color(0xFF8B5CF6),
-            secondary: Color(0xFF06B6D4),
-            surface: Color(0xFF18181B),
-            onSurface: Color(0xFFFAFAFA),
+            primary: GlassColors.violet,
+            secondary: GlassColors.cyan,
+            surface: GlassColors.glass,
+            onSurface: GlassColors.textPrimary,
           ),
           fontFamily: 'Segoe UI',
           scrollbarTheme: ScrollbarThemeData(
-            thumbColor: WidgetStateProperty.all(const Color(0xFF3F3F46)),
+            thumbColor: WidgetStateProperty.all(GlassColors.borderRaised),
             radius: const Radius.circular(4),
             thickness: WidgetStateProperty.all(6),
           ),
-          tooltipTheme: const TooltipThemeData(
+          tooltipTheme: TooltipThemeData(
             decoration: BoxDecoration(
-              color: Color(0xFF27272A),
-              borderRadius: BorderRadius.all(Radius.circular(6)),
+              color: GlassColors.overlay.withValues(alpha: 0.95),
+              borderRadius: const BorderRadius.all(Radius.circular(6)),
+              border: Border.all(
+                color: GlassColors.borderRaised.withValues(alpha: 0.8),
+              ),
             ),
-            textStyle: TextStyle(fontSize: 12, color: Colors.white),
+            textStyle: const TextStyle(fontSize: 11.5, color: Colors.white),
+          ),
+          dividerTheme: const DividerThemeData(
+            color: GlassColors.borderDefault,
+            thickness: 1,
           ),
         ),
         home: const ConsoleScreen(),
